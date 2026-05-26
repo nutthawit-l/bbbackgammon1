@@ -1,0 +1,18 @@
+import { Application } from '@pixi/react'
+import BoardScene from './BoardScene'
+
+const BOARD_WIDTH = 389
+const BOARD_HEIGHT = 328
+
+export default function GameBoard() {
+  return (
+    <Application
+      width={BOARD_WIDTH}
+      height={BOARD_HEIGHT}
+      backgroundAlpha={0}
+      className="block shrink-0"
+    >
+      <BoardScene />
+    </Application>
+  )
+}
