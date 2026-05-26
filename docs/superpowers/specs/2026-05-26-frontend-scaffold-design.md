@@ -9,7 +9,7 @@
 - **Build tool:** Vite 6
 - **UI:** React 19 + TypeScript 5 (strict mode)
 - **Styling:** Tailwind CSS v4 (configured via CSS `@import "tailwindcss"` — no config file needed)
-- **Canvas/game:** PixiJS v8, integrated via manual canvas ref (no `@pixi/react`)
+- **Canvas/game:** PixiJS v8 + `@pixi/react` (declarative canvas rendering)
 
 ## Folder Structure
 
@@ -18,8 +18,6 @@ frontend/
 ├── src/
 │   ├── components/
 │   │   └── GameCanvas.tsx
-│   ├── game/
-│   │   └── app.ts
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
@@ -37,10 +35,9 @@ Makefile  (project root)
 Root component. Renders the page shell using Tailwind for layout/background. Mounts `<GameCanvas />`.
 
 ### `components/GameCanvas.tsx`
-Holds a `<canvas>` ref. On mount, calls `createPixiApp(canvas)` from `game/app.ts` and stores the returned `Application`. On unmount, calls `app.destroy()` to clean up. No game logic here — only lifecycle management.
+Uses `@pixi/react`'s `<Application>` component to render a Pixi canvas declaratively. No manual `useRef<HTMLCanvasElement>` or `app.destroy()` lifecycle — `@pixi/react` handles init and cleanup. Child Pixi display objects are expressed as JSX elements (e.g. `<pixiSprite>`).
 
-### `game/app.ts`
-Exports `createPixiApp(canvas: HTMLCanvasElement): Promise<Application>`. Initializes PixiJS `Application` with the provided canvas element and returns it. Future game setup (stage, ticker, assets) will be added here.
+`game/app.ts` is not needed: `@pixi/react` `<Application>` replaces the manual factory.
 
 ## Config Files
 

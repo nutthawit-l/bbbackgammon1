@@ -9,7 +9,7 @@
 | Topic | Choice |
 |-------|--------|
 | Pixi boundary | **A** — entire Figma `GameBoard` frame (**389×328**): `BoardBorder` + inner `Board` + `SideBoard` |
-| Rendering strategy | **Pixi composite** — Figma-exported assets/sprites at design coordinates (v1) |
+| Rendering strategy | **@pixi/react composite** — `<Application>` + `<pixiSprite>` for board texture at design coordinates (v1) |
 | Interactivity | None in v1 (no drag, rules, or networking) |
 | Data | Hardcoded demo values from the `GameTable` symbol (PIPs, timers, checker layout) |
 
@@ -25,7 +25,7 @@
 - Other Figma symbols (`GameTableHighlight`, `GameTableDiceFade`, modals, `Starter`, etc.)
 - Routing, state management, backend
 - Refactors outside `GameTable` / `GameBoard` wiring
-- New npm dependencies
+- New npm dependencies beyond `@pixi/react` (already in scaffold)
 
 ## Figma structure (reference)
 
@@ -50,12 +50,9 @@ frontend/src/components/GameTable/
   TopBar.tsx              # React
   MainContent.tsx         # React wrapper
   PlayerStatusRow.tsx     # React — props: side 'them' | 'you'
-  GameBoard.tsx           # Canvas ref + Pixi lifecycle
+  GameBoard.tsx           # @pixi/react <Application> + <BoardScene>
+  BoardScene.tsx          # NEW — declarative Pixi sprites via @pixi/react
   BottomBar.tsx           # React
-
-frontend/src/game/
-  app.ts                  # createPixiApp (existing; board bg if needed)
-  boardScene.ts           # NEW — build GameBoard display tree from assets
 ```
 
 ### React vs Pixi
@@ -63,28 +60,33 @@ frontend/src/game/
 | Layer | Technology | Notes |
 |-------|------------|--------|
 | `GameTable`, `TopBar`, `MainContent`, `PlayerStatusRow`, `BottomBar` | React + Tailwind | Match Figma typography, colors, spacing |
-| `GameBoard` (389×328) | PixiJS v8 | Single canvas; `boardScene.ts` owns all board-layer visuals |
+| `GameBoard` (389×328) | `@pixi/react` v8 | `<Application>` wraps canvas; `<BoardScene>` owns all board-layer visuals as declarative JSX |
 
 ### `GameBoard.tsx`
 
-Same lifecycle pattern as current `GameCanvas.tsx`:
+Uses `@pixi/react` — no manual canvas ref or lifecycle:
 
-- `useRef` for `<canvas>`
-- On mount: `createPixiApp(canvas, 389, 328)` then `buildBoardScene(app)` (or pass stage into factory)
-- On unmount: `app.destroy()`
+```tsx
+import { Application } from '@pixi/react'
+import BoardScene from './BoardScene'
 
-### `boardScene.ts`
+export default function GameBoard() {
+  return (
+    <Application width={389} height={328} backgroundAlpha={0}>
+      <BoardScene />
+    </Application>
+  )
+}
+```
 
-- Export `buildBoardScene(app: Application): void` (or returns cleanup).
-- Load textures from `public/assets/game-board/` (downloaded from Figma export) **or** from bundled imports.
-- Place sprites/containers at Figma-relative positions for:
-  - Board frame (`#5e3014` border, `#c8924a` surface)
-  - 24 points (vector images)
-  - Checker groups (red/white)
-  - Bar doubling cube on board (`2`)
-  - Dice (2 and 4)
-  - `SideBoard`: bear-off trays, cube `64`, horizontal bars
-- v1 may use a **single flattened board texture** plus separate sprites only where layering matters; prefer simplest approach that passes visual check.
+### `BoardScene.tsx`
+
+React component rendered inside `<Application>` by `@pixi/react`:
+
+- Call `extend({ Sprite })` once (e.g. in `main.tsx` or top of file).
+- Load board texture via `Assets.load` in a `useEffect` (or `useAsset` if available).
+- Render `<pixiSprite texture={texture} width={389} height={328} />` when loaded.
+- v1 uses a **single flattened board texture**; prefer simplest approach that passes visual check.
 
 ### `GameTable.tsx`
 
@@ -119,13 +121,12 @@ v1 hardcodes copy from design:
 | Action | Path |
 |--------|------|
 | Create | `components/GameTable/*` (files above) |
-| Create | `game/boardScene.ts` |
 | Create | `public/assets/game-board/*` (exported PNGs/SVGs) |
 | Edit | `App.tsx` — render `<GameTable />` instead of `<GameCanvas />` |
-| Edit | `game/app.ts` — only if init options must change for board (e.g. transparent bg) |
 | Leave or delete later | `GameCanvas.tsx` — unused after swap; remove in same PR if nothing imports it |
+| Delete | `game/app.ts` — replaced by `@pixi/react` `<Application>`; remove if nothing else imports it |
 
-No Makefile or `package.json` changes unless asset pipeline requires a script (not expected).
+`@pixi/react` must already be in `package.json` (added in the scaffold plan).
 
 ## Verification plan
 

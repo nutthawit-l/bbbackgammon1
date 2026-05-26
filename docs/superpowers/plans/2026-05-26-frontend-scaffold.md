@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Scaffold a `frontend/` directory with Vite + React + TypeScript (strict) + Tailwind CSS v4 + PixiJS v8, using a manual canvas ref pattern.
+**Goal:** Scaffold a `frontend/` directory with Vite + React + TypeScript (strict) + Tailwind CSS v4 + PixiJS v8 + `@pixi/react`.
 
-**Architecture:** React handles the page shell and component lifecycle. A single `GameCanvas` component owns the `<canvas>` element and manages PixiJS `Application` init/destroy. PixiJS initialization logic lives in `game/app.ts`, cleanly separated from React. Tailwind v4 is wired as a Vite plugin — no config file needed.
+**Architecture:** React handles the page shell and component lifecycle. A single `GameCanvas` component uses `@pixi/react`'s `<Application>` for declarative Pixi rendering — no manual canvas ref or `app.destroy()` lifecycle needed. Tailwind v4 is wired as a Vite plugin — no config file needed.
 
-**Tech Stack:** Vite 6, React 19, TypeScript 5 (strict), Tailwind CSS v4 + `@tailwindcss/vite`, PixiJS v8, pnpm
+**Tech Stack:** Vite 6, React 19, TypeScript 5 (strict), Tailwind CSS v4 + `@tailwindcss/vite`, PixiJS v8, `@pixi/react`, pnpm
 
 ---
 
@@ -24,8 +24,7 @@
 | `frontend/src/index.css` | Create | Tailwind v4 import |
 | `frontend/src/main.tsx` | Create | React root mount |
 | `frontend/src/App.tsx` | Create | Page shell with Tailwind layout |
-| `frontend/src/game/app.ts` | Create | PixiJS Application factory |
-| `frontend/src/components/GameCanvas.tsx` | Create | Canvas ref + PixiJS lifecycle |
+| `frontend/src/components/GameCanvas.tsx` | Create | `@pixi/react` `<Application>` wrapper |
 | `Makefile` | Create | dev/build/preview targets (project root) |
 
 ---
@@ -56,6 +55,7 @@ mkdir -p frontend
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pixi/react": "^8.0.0",
     "pixi.js": "^8.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -279,45 +279,37 @@ git commit -m "chore: add React entry point"
 
 ---
 
-## Task 6: Create PixiJS Application factory
+## Task 6: Register Pixi display objects for @pixi/react
 
 **Files:**
-- Create: `frontend/src/game/app.ts`
+- Modify: `frontend/src/main.tsx`
 
-- [ ] **Step 1: Create `frontend/src/game/app.ts`**
+`@pixi/react` uses a custom renderer. You must call `extend()` once at app entry to register Pixi classes as JSX elements.
 
-```ts
-import { Application } from 'pixi.js'
+- [ ] **Step 1: Add `extend` call to `frontend/src/main.tsx`**
 
-export async function createPixiApp(
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number,
-): Promise<Application> {
-  const app = new Application()
-  await app.init({
-    canvas,
-    width,
-    height,
-    background: 0x1a1a2e,
-  })
-  return app
-}
+```tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { extend } from '@pixi/react'
+import { Sprite, Container } from 'pixi.js'
+import './index.css'
+import App from './App'
+
+extend({ Sprite, Container })
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
 ```
 
-- [ ] **Step 2: Verify TypeScript accepts the file**
+- [ ] **Step 2: Commit**
 
 ```bash
-cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
-```
-
-Expected: error about missing `App.tsx` and `GameCanvas.tsx` (those don't exist yet) — that's fine. There must be **no** error in `game/app.ts` itself.
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add frontend/src/game/app.ts
-git commit -m "feat: add PixiJS Application factory"
+git add frontend/src/main.tsx
+git commit -m "chore: register Pixi classes for @pixi/react renderer"
 ```
 
 ---
@@ -330,9 +322,7 @@ git commit -m "feat: add PixiJS Application factory"
 - [ ] **Step 1: Create `frontend/src/components/GameCanvas.tsx`**
 
 ```tsx
-import { useEffect, useRef } from 'react'
-import { type Application } from 'pixi.js'
-import { createPixiApp } from '../game/app'
+import { Application } from '@pixi/react'
 
 interface Props {
   width: number
@@ -340,41 +330,21 @@ interface Props {
 }
 
 export default function GameCanvas({ width, height }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const appRef = useRef<Application | null>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    let cancelled = false
-
-    createPixiApp(canvas, width, height).then((app) => {
-      if (cancelled) {
-        app.destroy()
-        return
-      }
-      appRef.current = app
-    })
-
-    return () => {
-      cancelled = true
-      appRef.current?.destroy()
-      appRef.current = null
-    }
-  }, [width, height])
-
-  return <canvas ref={canvasRef} />
+  return (
+    <Application width={width} height={height} background={0x1a1a2e}>
+      {/* child Pixi components go here */}
+    </Application>
+  )
 }
 ```
 
-Note: The `cancelled` flag guards against React StrictMode's double-invocation of effects — if cleanup runs before the async `init` resolves, the app is destroyed immediately instead of leaking.
+`@pixi/react`'s `<Application>` renders a `<canvas>` element and manages Pixi lifecycle (init, destroy, resize) automatically — no `useRef` or `useEffect` needed.
 
 - [ ] **Step 2: Commit**
 
 ```bash
 git add frontend/src/components/GameCanvas.tsx
-git commit -m "feat: add GameCanvas component with PixiJS lifecycle management"
+git commit -m "feat: add GameCanvas component using @pixi/react Application"
 ```
 
 ---
@@ -474,9 +444,9 @@ git commit -m "chore: add Makefile with dev/build/preview targets"
 | Vite 6 | Task 1 (package.json), Task 3 |
 | React 19 + TypeScript 5 strict | Task 1, Task 2 |
 | Tailwind CSS v4 via CSS import | Task 3 (vite plugin), Task 4 (CSS) |
-| PixiJS v8 | Task 1, Task 6 |
-| Manual canvas ref pattern | Task 7 |
-| `game/app.ts` factory | Task 6 |
+| PixiJS v8 + `@pixi/react` | Task 1, Tasks 6–7 |
+| `@pixi/react` `<Application>` pattern | Task 7 |
+| `extend()` registration | Task 6 |
 | `components/GameCanvas.tsx` | Task 7 |
 | `App.tsx` shell | Task 8 |
 | Makefile dev/build/preview | Task 9 |

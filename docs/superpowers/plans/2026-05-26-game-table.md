@@ -6,7 +6,7 @@
 
 **Architecture:** React + Tailwind own `GameTable`, `TopBar`, `MainContent`, `PlayerStatusRow`, and `BottomBar`. `GameBoard` owns a `<canvas>` ref and delegates Pixi lifecycle to `createPixiApp` + `buildBoardScene`. v1 uses one checked-in PNG for the entire board frame (points, checkers, dice, side panel) to match Figma quickly without game logic.
 
-**Tech Stack:** Vite 6, React 19, TypeScript 5 (strict), Tailwind CSS v4, PixiJS v8, pnpm, Makefile (`make dev` / `make build`)
+**Tech Stack:** Vite 6, React 19, TypeScript 5 (strict), Tailwind CSS v4, PixiJS v8, `@pixi/react`, pnpm, Makefile (`make dev` / `make build`)
 
 **Spec:** `docs/superpowers/specs/2026-05-26-game-table-design.md`
 
@@ -17,9 +17,8 @@
 | File | Status | Responsibility |
 |------|--------|----------------|
 | `frontend/public/assets/game-board/board.png` | Create | 389×328 composite export of Figma `GameBoard` (`55:749`) |
-| `frontend/src/game/boardScene.ts` | Create | Load board texture; add full-board sprite to Pixi stage |
-| `frontend/src/game/app.ts` | Modify | Transparent canvas background for board overlay |
-| `frontend/src/components/GameTable/GameBoard.tsx` | Create | Canvas ref; init Pixi + `buildBoardScene` |
+| `frontend/src/components/GameTable/BoardScene.tsx` | Create | `@pixi/react` component: load board texture, render `<pixiSprite>` |
+| `frontend/src/components/GameTable/GameBoard.tsx` | Create | `@pixi/react` `<Application>` + `<BoardScene>` |
 | `frontend/src/components/GameTable/PlayerStatusRow.tsx` | Create | Them / You status + timer rows |
 | `frontend/src/components/GameTable/TopBar.tsx` | Create | Home, help, settings buttons |
 | `frontend/src/components/GameTable/BottomBar.tsx` | Create | Clock + "Online Game" footer |
@@ -64,73 +63,58 @@ git commit -m "chore: add GameBoard composite asset for Pixi"
 
 ---
 
-## Task 2: Pixi board scene + transparent app background
+## Task 2: BoardScene component
 
 **Files:**
-- Create: `frontend/src/game/boardScene.ts`
-- Modify: `frontend/src/game/app.ts`
+- Create: `frontend/src/components/GameTable/BoardScene.tsx`
 
-- [ ] **Step 1: Update `createPixiApp` for transparent background**
+- [ ] **Step 1: Create `BoardScene.tsx`**
 
-Replace `frontend/src/game/app.ts` with:
+Create `frontend/src/components/GameTable/BoardScene.tsx`:
 
-```typescript
-import { Application } from 'pixi.js'
-
-export async function createPixiApp(
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number,
-): Promise<Application> {
-  const app = new Application()
-  await app.init({
-    canvas,
-    width,
-    height,
-    backgroundAlpha: 0,
-  })
-  return app
-}
-```
-
-- [ ] **Step 2: Create `boardScene.ts`**
-
-Create `frontend/src/game/boardScene.ts`:
-
-```typescript
-import { Application, Assets, Sprite } from 'pixi.js'
+```tsx
+import { Assets, Texture } from 'pixi.js'
+import { useState, useEffect } from 'react'
 
 const BOARD_WIDTH = 389
 const BOARD_HEIGHT = 328
 const BOARD_TEXTURE = '/assets/game-board/board.png'
 
-export async function buildBoardScene(app: Application): Promise<void> {
-  const texture = await Assets.load(BOARD_TEXTURE)
-  const board = new Sprite(texture)
-  board.width = BOARD_WIDTH
-  board.height = BOARD_HEIGHT
-  app.stage.addChild(board)
+export default function BoardScene() {
+  const [texture, setTexture] = useState<Texture | null>(null)
+
+  useEffect(() => {
+    Assets.load<Texture>(BOARD_TEXTURE).then(setTexture)
+  }, [])
+
+  if (!texture) return null
+
+  return (
+    <pixiSprite texture={texture} width={BOARD_WIDTH} height={BOARD_HEIGHT} />
+  )
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript compiles**
+`pixiSprite` is the JSX element registered by `extend({ Sprite })` in `main.tsx`.
+
+- [ ] **Step 2: Verify TypeScript compiles**
 
 ```bash
 make build
 ```
 
-Expected: exit code **0** (board scene is not imported yet; only checks `app.ts` change compiles).
+Expected: exit code **0** (not imported yet — just checks the file is valid TypeScript).
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add frontend/src/game/app.ts frontend/src/game/boardScene.ts
-git commit -m "feat: add Pixi board scene loader and transparent canvas"
+git add frontend/src/components/GameTable/BoardScene.tsx
+git commit -m "feat: add @pixi/react BoardScene component"
 ```
 
 ---
 
-## Task 3: GameBoard React component (Pixi lifecycle)
+## Task 3: GameBoard component (@pixi/react)
 
 **Files:**
 - Create: `frontend/src/components/GameTable/GameBoard.tsx`
@@ -139,57 +123,34 @@ git commit -m "feat: add Pixi board scene loader and transparent canvas"
 
 Create `frontend/src/components/GameTable/GameBoard.tsx`:
 
-```typescript
-import { useEffect, useRef } from 'react'
-import { type Application } from 'pixi.js'
-import { createPixiApp } from '../../game/app'
-import { buildBoardScene } from '../../game/boardScene'
+```tsx
+import { Application } from '@pixi/react'
+import BoardScene from './BoardScene'
 
 const BOARD_WIDTH = 389
 const BOARD_HEIGHT = 328
 
 export default function GameBoard() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const appRef = useRef<Application | null>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    let cancelled = false
-
-    createPixiApp(canvas, BOARD_WIDTH, BOARD_HEIGHT).then(async (app) => {
-      if (cancelled) {
-        app.destroy()
-        return
-      }
-      await buildBoardScene(app)
-      appRef.current = app
-    })
-
-    return () => {
-      cancelled = true
-      appRef.current?.destroy()
-      appRef.current = null
-    }
-  }, [])
-
   return (
-    <canvas
-      ref={canvasRef}
+    <Application
       width={BOARD_WIDTH}
       height={BOARD_HEIGHT}
+      backgroundAlpha={0}
       className="block shrink-0"
-    />
+    >
+      <BoardScene />
+    </Application>
   )
 }
 ```
+
+`@pixi/react` `<Application>` renders the canvas and manages Pixi lifecycle — no `useRef` or `useEffect` needed.
 
 - [ ] **Step 2: Temporary mount in `App.tsx` to verify board renders**
 
 Modify `frontend/src/App.tsx` temporarily:
 
-```typescript
+```tsx
 import GameBoard from './components/GameTable/GameBoard'
 
 export default function App() {
@@ -217,7 +178,7 @@ Undo `App.tsx` to current `GameCanvas` import until Task 6, **or** leave as `Gam
 
 ```bash
 git add frontend/src/components/GameTable/GameBoard.tsx
-git commit -m "feat: add GameBoard Pixi canvas component"
+git commit -m "feat: add GameBoard using @pixi/react Application"
 ```
 
 ---
@@ -523,12 +484,12 @@ git commit -m "feat: mount GameTable in App and remove GameCanvas placeholder"
 
 | Spec requirement | Task |
 |------------------|------|
-| Pixi boundary 389×328 full GameBoard | Task 1 asset, Task 2–3 |
+| Pixi boundary 389×328 full GameBoard | Task 1 asset, Tasks 2–3 |
 | React TopBar / MainContent / status / BottomBar | Task 4–5 |
 | `GameTable` 393×852 gradient | Task 5 |
 | Replace `GameCanvas` in App | Task 6 |
 | Static demo data | Task 4 hardcoded strings |
-| No game logic / no new deps | Entire plan |
+| No game logic / no new deps beyond `@pixi/react` | Entire plan |
 | `make build` verification | Tasks 2, 5, 6 |
 
 ## Out of scope (confirmed not in plan)
