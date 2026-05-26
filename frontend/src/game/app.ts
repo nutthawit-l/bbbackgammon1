@@ -10,7 +10,7 @@ export async function createPixiApp(
     canvas,
     width,
     height,
-    background: 0x1a1a2e,
+    backgroundAlpha: 0,
   })
   return app
 }
