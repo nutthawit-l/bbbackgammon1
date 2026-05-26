@@ -1,0 +1,2 @@
+- Always create Makefile for keep all commands
+- Always use pnpm manage nodejs packages
