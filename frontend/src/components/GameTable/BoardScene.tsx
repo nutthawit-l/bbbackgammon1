@@ -1,9 +1,23 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { useTick } from '@pixi/react'
 import type { Graphics } from 'pixi.js'
 import {
   POINT_LAYOUT, CHECKER_R, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y, checkerY,
+  ANIM_DURATION,
 } from './boardLayout'
 import { INITIAL_STATE, type GameState, type CheckerColor } from './checkerState'
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface AnimState {
+  fromX: number; fromY: number
+  toX: number; toY: number
+  color: CheckerColor
+  fromPoint: number; toPoint: number
+  t: number
+}
+
+// ─── Drawing helpers ─────────────────────────────────────────────────────────
 
 const TRIANGLE_DARK = 0x7b2d10
 const TRIANGLE_LIGHT = 0xc8501a
@@ -62,83 +76,121 @@ function drawCheckers(
   }
 }
 
-// Hit area draw helper -- transparent react that captures pointer events
-function makeHitDraw(x: number, y: number, w: number, h: number) {
+// ─── Hit areas (stable, computed once outside component) ─────────────────────
+
+const HIT_DRAWS = POINT_LAYOUT.map((layout) => {
+  // Reverse-compute column from cx
+  const inner = layout.cx - 10
+  const isRightOfBar = inner >= 165.9 + 18
+  const col = isRightOfBar
+    ? Math.round((inner - 18 - 13.83) / 27.65)
+    : Math.round((inner - 13.83) / 27.65)
+  const xOff = col >= 6 ? 18 : 0
+  const xL = 10 + col * 27.65 + xOff
+  const isTop = layout.dir === 1   // top points (13–24)
+  const y = isTop ? 10 : 164
   return (g: Graphics) => {
     g.clear()
-    g.rect(x, y, w, h).fill({ color: 0, alpha: 0.001 })
+    g.rect(xL, y, 27.65, 154).fill({ color: 0, alpha: 0.001 })
   }
-}
-
-// Precompute hit area rects for all 24 points (full colum, split at midpoint y=164)
-const HIT_AREAS = POINT_LAYOUT.map((layout, i) => {
-  const xOff = POINT_LAYOUT.indexOf(layout) >= 0 ? 0 : 0 // unused, kept for clarity
-  const col = (() => {
-    // Reverse-compute column from cx
-    const inner = layout.cx - 10
-    const col6plus = inner >= 165.9 + 18
-    return col6plus
-      ? Math.round((inner - 18 - 13.83) / 27.65)
-      : Math.round((inner - 13.83) / 27.65)
-  })()
-  const xOff2 = col >= 6 ? 18 : 0
-  const xL = 10 + col * 27.65 + xOff2
-  const isTop = layout.dir === 1   // top points (13–24)
-  const x = xL
-  const w = 27.65
-  const y = isTop ? 10 : 164
-  const h = isTop ? 154 : 154  // both halves are 154px (164-10 or 318-164)
-  return { x, y: isTop ? 10 : 164, w, h }
 })
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function BoardScene() {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE)
   const [selected, setSelected] = useState<number | null>(null)
-  const animFromPointRef = useRef<number | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const animRef = useRef<AnimState | null>(null)
+  const animGfxRef = useRef<Graphics>(null)
+
+  // Animation tick -- runs every frame, update animRef and imperatively redraws animGfx
+  useTick((ticker) => {
+    const anim = animRef.current
+    if (!anim || !animGfxRef.current) return
+
+    anim.t = Math.min(1, anim.t + ticker.deltaTime / ANIM_DURATION)
+    const eased = anim.t * anim.t * (3 - 2 * anim.t)
+    const x = anim.fromX + (anim.toX - anim.fromX) * eased
+    const y = anim.fromY + (anim.toY - anim.fromY) * eased
+
+    const g = animGfxRef.current
+    g.clear()
+
+    if (anim.t < 1) {
+      drawChecker(g, x, y, anim.color)
+    } else {
+      // Commit move to state
+      setGameState(gs => {
+        const pts = gs.points.map(p => ({ ...p }))
+        const from = pts[anim.fromPoint]
+        pts[anim.fromPoint] = { ...from, count: from.count - 1 }
+        if (pts[anim.fromPoint].count === 0) pts[anim.fromPoint] = { color: null, count: 0 }
+        const to = pts[anim.toPoint]
+        pts[anim.toPoint] = { color: anim.color, count: to.count + 1 }
+        return { ...gs, points: pts }
+      })
+      animRef.current = null
+      setIsAnimating(false)
+    }
+  })
 
   const handleClick = useCallback((pointIdx: number) => {
-    if (animFromPointRef.current !== null) return
+    if (animRef.current) return // ignore during animation
 
     setSelected(prev => {
       if (prev === null) {
         // Select if has checkers
-        if (gameState.points[pointIdx]?.count > 0) return pointIdx
+        if ((gameState.points[pointIdx]?.count ?? 0) > 0) return pointIdx
         return null
       }
       if (prev === pointIdx) return null // deselect
-      // Move: update game state
-      setGameState(gs => {
-        const pts = gs.points.map(p => ({ ...p }))
-        const from = pts[prev]
-        const to = pts[pointIdx]
-        pts[prev] = { ...from, count: from.count - 1 }
-        if (pts[prev].count === 0) pts[prev] = { color: null, count: 0 }
-        pts[pointIdx] = { color: from.color!, count: to.count + 1 }
-        return { ...gs, points: pts }
-      })
+
+      // Start animation
+      const from = POINT_LAYOUT[prev]
+      const to = POINT_LAYOUT[pointIdx]
+      const fromPt = gameState.points[prev]
+      const stackPos = Math.min(fromPt.count - 1, 4)
+      const fromY = checkerY(prev, stackPos)
+      const toStackPos = Math.min((gameState.points[pointIdx]?.count ?? 0), 4)
+      const toY = checkerY(pointIdx, toStackPos)
+
+      animRef.current = {
+        fromX: from.cx, fromY,
+        toX: to.cx, toY,
+        color: fromPt.color!,
+        fromPoint: prev, toPoint: pointIdx,
+        t: 0,
+      }
+      setIsAnimating(true)
       return null
     })
-  }, [gameState])
+  }, [gameState, isAnimating])
 
   const drawBoardCb = useCallback(drawBoard, [])
   const drawCheckersCb = useCallback(
-    (g: Graphics) => drawCheckers(g, gameState, selected, animFromPointRef.current),
-    [gameState, selected],
+    (g: Graphics) => drawCheckers(g, gameState, selected, animRef.current?.fromPoint ?? null),
+    [gameState, selected, isAnimating],
+  )
+  const hitDrawCallbacks = useMemo(
+    () => HIT_DRAWS.map(fn => (g: Graphics) => fn(g)),
+    [],
   )
 
   return (
     <>
       <pixiGraphics draw={drawBoardCb} />
       <pixiGraphics draw={drawCheckersCb} />
-      {HIT_AREAS.map((area, i) => (
+      {hitDrawCallbacks.map((draw, i) => (
         <pixiGraphics
           key={i}
-          draw={useCallback(makeHitDraw(area.x, area.y, area.w, area.h), [])}
+          draw={draw}
           eventMode="static"
           cursor="pointer"
           onPointerDown={() => handleClick(i)}
         />
       ))}
+      <pixiGraphics ref={animGfxRef} draw={(g) => g.clear()} />
     </>
   )
 }
