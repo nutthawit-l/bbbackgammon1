@@ -58,13 +58,13 @@ function drawCheckers(
     const pt = gameState.points[i]
     if (!pt.color || pt.count === 0) continue
     const layout = POINT_LAYOUT[i]
-    const display = Math.min(pt.count, 5)
+    const count = animFromPoint === i ? pt.count - 1 : pt.count
+    if (count <= 0) continue
+    const display = Math.min(count, 5)
     for (let s = 0; s < display; s++) {
-      const y = checkerY(i, s)
-      const isTop = s === display - 1
-      drawChecker(g, layout.cx, y, pt.color, isTop && selected === i)
+      drawChecker(g, layout.cx, checkerY(i, s), pt.color, s === display - 1 && selected === i)
     }
-    if (pt.count > 5) {
+    if (count > 5) {
       g.circle(layout.cx, checkerY(i, 4), CHECKER_R).fill({ color: 0x000000, alpha: 0.5 })
     }
   }
@@ -72,7 +72,7 @@ function drawCheckers(
     drawChecker(g, BAR_CX, BAR_THEM_ANCHOR_Y + (-1) * s * CHECKER_R * 2, 'red')
   }
   for (let s = 0; s < gameState.bar.you; s++) {
-    drawChecker(g, BAR_CX, BAR_THEM_ANCHOR_Y + s * CHECKER_R * 2, 'white')
+    drawChecker(g, BAR_CX, BAR_YOU_ANCHOR_Y + s * CHECKER_R * 2, 'white')
   }
 }
 

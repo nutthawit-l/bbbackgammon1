@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { POINT_LAYOUT, checkerY, CHECKER_R, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y } from '../boardLayout'
+import { POINT_LAYOUT, checkerY, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y } from '../boardLayout'
 
 describe('POINT_LAYOUT', () => {
   it('has 24 entries', () => {
