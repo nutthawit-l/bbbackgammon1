@@ -33,9 +33,13 @@ function drawChecker(g: Graphics, cx: number, cy: number, color: CheckerColor, h
   g.circle(cx, cy, CHECKER_R).fill(fill).stroke({ color: stroke, width: 1 })
 }
 
-function drawCheckers(g: Graphics, gameState: GameState, selected: number | null) {
+function drawCheckers(
+  g: Graphics,
+  gameState: GameState,
+  selected: number | null,
+  animFromPoint: number | null,
+) {
   g.clear()
-
   for (let i = 0; i < 24; i++) {
     const pt = gameState.points[i]
     if (!pt.color || pt.count === 0) continue
@@ -47,12 +51,9 @@ function drawCheckers(g: Graphics, gameState: GameState, selected: number | null
       drawChecker(g, layout.cx, y, pt.color, isTop && selected === i)
     }
     if (pt.count > 5) {
-      // Draw count badge on topmost checker (darker overlay + number rendered via separate Text in future)
       g.circle(layout.cx, checkerY(i, 4), CHECKER_R).fill({ color: 0x000000, alpha: 0.5 })
     }
   }
-
-  // Bar checkers
   for (let s = 0; s < gameState.bar.them; s++) {
     drawChecker(g, BAR_CX, BAR_THEM_ANCHOR_Y + (-1) * s * CHECKER_R * 2, 'red')
   }
@@ -61,14 +62,67 @@ function drawCheckers(g: Graphics, gameState: GameState, selected: number | null
   }
 }
 
+// Hit area draw helper -- transparent react that captures pointer events
+function makeHitDraw(x: number, y: number, w: number, h: number) {
+  return (g: Graphics) => {
+    g.clear()
+    g.rect(x, y, w, h).fill({ color: 0, alpha: 0.001 })
+  }
+}
+
+// Precompute hit area rects for all 24 points (full colum, split at midpoint y=164)
+const HIT_AREAS = POINT_LAYOUT.map((layout, i) => {
+  const xOff = POINT_LAYOUT.indexOf(layout) >= 0 ? 0 : 0 // unused, kept for clarity
+  const col = (() => {
+    // Reverse-compute column from cx
+    const inner = layout.cx - 10
+    const col6plus = inner >= 165.9 + 18
+    return col6plus
+      ? Math.round((inner - 18 - 13.83) / 27.65)
+      : Math.round((inner - 13.83) / 27.65)
+  })()
+  const xOff2 = col >= 6 ? 18 : 0
+  const xL = 10 + col * 27.65 + xOff2
+  const isTop = layout.dir === 1   // top points (13–24)
+  const x = xL
+  const w = 27.65
+  const y = isTop ? 10 : 164
+  const h = isTop ? 154 : 154  // both halves are 154px (164-10 or 318-164)
+  return { x, y: isTop ? 10 : 164, w, h }
+})
+
 export default function BoardScene() {
-  const [gameState] = useState<GameState>(INITIAL_STATE)
+  const [gameState, setGameState] = useState<GameState>(INITIAL_STATE)
   const [selected, setSelected] = useState<number | null>(null)
-  const _ = setSelected // will be used in next task
+  const animFromPointRef = useRef<number | null>(null)
+
+  const handleClick = useCallback((pointIdx: number) => {
+    if (animFromPointRef.current !== null) return
+
+    setSelected(prev => {
+      if (prev === null) {
+        // Select if has checkers
+        if (gameState.points[pointIdx]?.count > 0) return pointIdx
+        return null
+      }
+      if (prev === pointIdx) return null // deselect
+      // Move: update game state
+      setGameState(gs => {
+        const pts = gs.points.map(p => ({ ...p }))
+        const from = pts[prev]
+        const to = pts[pointIdx]
+        pts[prev] = { ...from, count: from.count - 1 }
+        if (pts[prev].count === 0) pts[prev] = { color: null, count: 0 }
+        pts[pointIdx] = { color: from.color!, count: to.count + 1 }
+        return { ...gs, points: pts }
+      })
+      return null
+    })
+  }, [gameState])
 
   const drawBoardCb = useCallback(drawBoard, [])
   const drawCheckersCb = useCallback(
-    (g: Graphics) => drawCheckers(g, gameState, selected),
+    (g: Graphics) => drawCheckers(g, gameState, selected, animFromPointRef.current),
     [gameState, selected],
   )
 
@@ -76,6 +130,15 @@ export default function BoardScene() {
     <>
       <pixiGraphics draw={drawBoardCb} />
       <pixiGraphics draw={drawCheckersCb} />
+      {HIT_AREAS.map((area, i) => (
+        <pixiGraphics
+          key={i}
+          draw={useCallback(makeHitDraw(area.x, area.y, area.w, area.h), [])}
+          eventMode="static"
+          cursor="pointer"
+          onPointerDown={() => handleClick(i)}
+        />
+      ))}
     </>
   )
 }
