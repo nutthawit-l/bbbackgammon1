@@ -24,6 +24,8 @@ interface AnimState {
 
 // ─── Drawing helpers ─────────────────────────────────────────────────────────
 
+const MAX_STACK = 7
+
 const TRIANGLE_DARK = 0x7b2d10
 const TRIANGLE_LIGHT = 0xc8501a
 
@@ -70,12 +72,12 @@ function drawCheckers(
     const layout = POINT_LAYOUT[i]
     const count = animFromPoint === i ? pt.count - 1 : pt.count
     if (count <= 0) continue
-    const display = Math.min(count, 5)
+    const display = Math.min(count, MAX_STACK)
     for (let s = 0; s < display; s++) {
       drawChecker(g, layout.cx, checkerY(i, s), pt.color, s === display - 1 && selected === i)
     }
-    if (count > 5) {
-      g.circle(layout.cx, checkerY(i, 4), CHECKER_R).fill({ color: 0x000000, alpha: 0.5 })
+    if (count > MAX_STACK) {
+      g.circle(layout.cx, checkerY(i, MAX_STACK - 1), CHECKER_R).fill({ color: 0x000000, alpha: 0.5 })
     }
   }
   // Bar checkers are rendered in the center strip.
@@ -89,6 +91,7 @@ function drawCheckers(
 
 // ─── Hit areas (stable, computed once outside component) ─────────────────────
 
+// Create a clickable area for each point (triangle column) from data in POINT_LAYOUT.
 const HIT_DRAWS = POINT_LAYOUT.map((layout) => {
   // Reverse-compute column from cx
   const inner = layout.cx - 10
@@ -164,9 +167,9 @@ export default function BoardScene() {
       const from = POINT_LAYOUT[prev]
       const to = POINT_LAYOUT[pointIdx]
       const fromPt = gameState.points[prev]
-      const stackPos = Math.min(fromPt.count - 1, 4)
+      const stackPos = Math.min(fromPt.count - 1, MAX_STACK - 1)
       const fromY = checkerY(prev, stackPos)
-      const toStackPos = Math.min((gameState.points[pointIdx]?.count ?? 0), 4)
+      const toStackPos = Math.min((gameState.points[pointIdx]?.count ?? 0), MAX_STACK - 1)
       const toY = checkerY(pointIdx, toStackPos)
 
       animRef.current = {
