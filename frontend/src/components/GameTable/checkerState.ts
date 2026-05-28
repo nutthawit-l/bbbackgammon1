@@ -1,7 +1,9 @@
 export type CheckerColor = 'red' | 'white'
 
 export interface PointState {
+  // null means this point is empty.
   color: CheckerColor | null
+  // Number of checkers currently on this point.
   count: number
 }
 
@@ -12,14 +14,19 @@ export interface SpecialZoneState {
 }
 
 export interface GameState {
+  // 24 board points where index 0 = point 1 ... index 23 = point 24.
   points: PointState[]
+  // Captured checkers waiting to re-enter.
   bar: SpecialZoneState
+  // Checkers already borne off the board.
   bearOff: SpecialZoneState
 }
 
+// Shared immutable "empty point" object.
 const E: PointState = { color: null, count: 0 }
 
 export const INITIAL_STATE: GameState = {
+  // Standard backgammon opening layout.
   points: [
     { color: 'red', count: 2 },   // [0] point 1
     E,

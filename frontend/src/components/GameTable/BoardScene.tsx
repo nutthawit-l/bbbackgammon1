@@ -10,10 +10,15 @@ import { INITIAL_STATE, type GameState, type CheckerColor } from './checkerState
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface AnimState {
+  // Start position (pixel coordinates) of the moving checker.
   fromX: number; fromY: number
+  // End position (pixel coordinates) where the checker should land.
   toX: number; toY: number
+  // Checker color being animated (used while drawing in-flight piece).
   color: CheckerColor
+  // Logical board move: source point index -> destination point index.
   fromPoint: number; toPoint: number
+  // Normalized animation progress in [0, 1].
   t: number
 }
 
@@ -23,9 +28,12 @@ const TRIANGLE_DARK = 0x7b2d10
 const TRIANGLE_LIGHT = 0xc8501a
 
 function drawBoard(g: Graphics) {
+  // Pixi `Graphics` is immediate-mode: each draw call redraws full geometry.
   g.clear()
+  // Board background and play surface.
   g.roundRect(0, 0, 389, 328, 5).fill(0x5e3014)
   g.rect(10, 10, 350, 308).fill(0xc8924a)
+  // Draw 12 triangle columns on top and bottom (24 points total).
   for (let col = 0; col < 12; col++) {
     const xOff = col >= 6 ? 18 : 0
     const xL = 10 + col * 27.65 + xOff
@@ -39,6 +47,7 @@ function drawBoard(g: Graphics) {
 }
 
 function drawChecker(g: Graphics, cx: number, cy: number, color: CheckerColor, highlight = false) {
+  // Optional glow to indicate selected point's top checker.
   if (highlight) {
     g.circle(cx, cy, CHECKER_R + 4).fill({ color: 0x4499ff, alpha: 0.6 })
   }
@@ -54,6 +63,7 @@ function drawCheckers(
   animFromPoint: number | null,
 ) {
   g.clear()
+  // Point checkers (1..24). While animating, hide one checker from source stack.
   for (let i = 0; i < 24; i++) {
     const pt = gameState.points[i]
     if (!pt.color || pt.count === 0) continue
@@ -68,6 +78,7 @@ function drawCheckers(
       g.circle(layout.cx, checkerY(i, 4), CHECKER_R).fill({ color: 0x000000, alpha: 0.5 })
     }
   }
+  // Bar checkers are rendered in the center strip.
   for (let s = 0; s < gameState.bar.them; s++) {
     drawChecker(g, BAR_CX, BAR_THEM_ANCHOR_Y + (-1) * s * CHECKER_R * 2, 'red')
   }
@@ -91,6 +102,7 @@ const HIT_DRAWS = POINT_LAYOUT.map((layout) => {
   const y = isTop ? 10 : 164
   return (g: Graphics) => {
     g.clear()
+    // Invisible rectangles still receive pointer events in Pixi.
     g.rect(xL, y, 27.65, 154).fill({ color: 0, alpha: 0.001 })
   }
 })
@@ -104,7 +116,8 @@ export default function BoardScene() {
   const animRef = useRef<AnimState | null>(null)
   const animGfxRef = useRef<Graphics>(null)
 
-  // Animation tick -- runs every frame, update animRef and imperatively redraws animGfx
+  // `useTick` subscribes to Pixi's render loop (roughly once per frame).
+  // We keep animation state in a ref so frame updates avoid React re-renders.
   useTick((ticker) => {
     const anim = animRef.current
     if (!anim || !animGfxRef.current) return
@@ -118,6 +131,7 @@ export default function BoardScene() {
     g.clear()
 
     if (anim.t < 1) {
+      // Draw only the in-flight checker on a dedicated top layer.
       drawChecker(g, x, y, anim.color)
     } else {
       // Commit move to state
@@ -179,7 +193,9 @@ export default function BoardScene() {
 
   return (
     <>
+      {/* Layer 1: static board background. */}
       <pixiGraphics draw={drawBoardCb} />
+      {/* Layer 2: stacked checkers bound to React state. */}
       <pixiGraphics draw={drawCheckersCb} />
       {hitDrawCallbacks.map((draw, i) => (
         <pixiGraphics
@@ -190,6 +206,7 @@ export default function BoardScene() {
           onPointerDown={() => handleClick(i)}
         />
       ))}
+      {/* Layer 4: animated checker drawn imperatively each tick. */}
       <pixiGraphics ref={animGfxRef} draw={(g) => g.clear()} />
     </>
   )

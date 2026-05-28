@@ -7,9 +7,14 @@ export const BAR_YOU_ANCHOR_Y = 176   // your hit checkers anchor y (stack downw
 export interface PointLayout {
   cx: number      // center x in canvas coords
   anchorY: number // board edge y where checkers start stacking
-  dir: 1 | -1     // 1 = stack downward (topp points 13-24), -1 = stack upward (bottom 1-12)
+  // Direction of stacking along Y axis:
+  //  1  -> top row points (13..24) grow downward
+  // -1  -> bottom row points (1..12) grow upward
+  dir: 1 | -1
 }
 
+// Convert 0..11 board column index to checker center X.
+// Columns 6..11 are shifted by +18 to leave room for the middle bar.
 const colCx = (col: number): number =>
   10 + col * 27.65 + 13.83 + (col >= 6 ? 18 : 0)
 
@@ -47,5 +52,6 @@ export const POINT_LAYOUT: PointLayout[] = [
 
 export function checkerY(pointIdx: number, stackPos: number): number {
   const { anchorY, dir } = POINT_LAYOUT[pointIdx]
+  // stackPos 0 is closest to board edge; each next checker offsets by 2 radii.
   return anchorY + dir * (CHECKER_R + stackPos * CHECKER_R * 2)
 }
