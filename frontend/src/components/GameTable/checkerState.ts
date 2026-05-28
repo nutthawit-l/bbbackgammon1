@@ -56,3 +56,45 @@ export const INITIAL_STATE: GameState = {
   bar: { them: 0, you: 0 },
   bearOff: { them: 0, you: 0 },
 }
+
+export function applyMove(
+  gs: GameState,
+  fromIdx: number,
+  toIdx: number,
+): { nextState: GameState; hitColor: CheckerColor | null } {
+  const pts = gs.points.map(p => ({ ...p }))
+  const src = pts[fromIdx]
+
+  // Move checker away from point (triangle)
+  pts[fromIdx] = src.count === 1
+    ? { color: null, count: 0 }
+    : { color: src.color, count: src.count - 1 }
+
+  // Define what color was hit red or white
+  const dst = pts[toIdx]
+  const hitColor: CheckerColor | null =
+    dst.color !== null && dst.color !== src.color && dst.count === 1
+      ? dst.color
+      : null
+
+  // Set destination point (triangle)
+  // If opponent checker was hit, that point will be my checker instead
+  // If not hit, it just increment the checker number and all original checkers
+  // will be transfer to color of new one
+  pts[toIdx] = {
+    color: src.color!,
+    count: hitColor !== null ? 1 : dst.count + 1,
+  }
+
+  return { nextState: { ...gs, points: pts }, hitColor }
+}
+
+export function applyBarHit(gs: GameState, hitColor: CheckerColor): GameState {
+  return {
+    ...gs,
+    bar: {
+      them: gs.bar.them + (hitColor === 'red' ? 1 : 0),
+      you: gs.bar.you + (hitColor === 'white' ? 1 : 0),
+    },
+  }
+}

@@ -1,5 +1,88 @@
 import { describe, it, expect } from 'vitest'
-import { INITIAL_STATE } from '../checkerState'
+import { INITIAL_STATE, applyMove, applyBarHit, type GameState } from '../checkerState'
+
+describe('applyMove', () => {
+  it('normal move: decrements source, increments destination', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      points: INITIAL_STATE.points.map((p, i) =>
+        i === 5 ? { color: 'white', count: 5 } :
+        i === 4 ? { color: null, count: 0 } : p
+      ),
+    }
+    const { nextState, hitColor } = applyMove(gs, 5, 4)
+    expect(nextState.points[5]).toEqual({ color: 'white', count: 4 })
+    expect(nextState.points[4]).toEqual({ color: 'white', count: 1 })
+    expect(hitColor).toBeNull()
+    expect(nextState.bar).toEqual(gs.bar)
+  })
+
+  it('stacks onto own-color checkers', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      points: INITIAL_STATE.points.map((p, i) =>
+        i === 5 ? { color: 'white', count: 3 } :
+        i === 4 ? { color: 'white', count: 2 } : p
+      ),
+    }
+    const { nextState, hitColor } = applyMove(gs, 5, 4)
+    expect(nextState.points[4]).toEqual({ color: 'white', count: 3 })
+    expect(hitColor).toBeNull()
+  })
+
+  it('hit: overwrites blot and returns hitColor', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      points: INITIAL_STATE.points.map((p, i) =>
+        i === 5 ? { color: 'white', count: 3 } :
+        i === 4 ? { color: 'red', count: 1 } : p
+      ),
+    }
+    const { nextState, hitColor } = applyMove(gs, 5, 4)
+    expect(nextState.points[5]).toEqual({ color: 'white', count: 2 })
+    expect(nextState.points[4]).toEqual({ color: 'white', count: 1 })
+    expect(hitColor).toBe('red')
+    // var not incremented here -- applyBarHit handles that
+    expect(nextState.bar).toEqual(gs.bar)
+  })
+
+  it('no hit when landing on 2+ opponent checkers', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      points: INITIAL_STATE.points.map((p, i) =>
+        i === 5 ? { color: 'white', count: 3 } :
+        i === 4 ? { color: 'red',   count: 2 } : p
+      ),
+    }
+    const { nextState, hitColor } = applyMove(gs, 5, 4)
+    // Free-move: color overwritten, count incremented
+    expect(nextState.points[4]).toEqual({ color: 'white', count: 3 })
+    expect(hitColor).toBeNull()
+  })
+})
+
+describe('applyBarHit', () => {
+  it('increment bar.them for red', () => {
+    const next = applyBarHit(INITIAL_STATE, 'red')
+    expect(next.bar.them).toBe(1)
+    expect(next.bar.you).toBe(0)
+  })
+
+  it('increment bar.them for white', () => {
+    const next = applyBarHit(INITIAL_STATE, 'white')
+    expect(next.bar.them).toBe(0)
+    expect(next.bar.you).toBe(1)
+  })
+
+  it('accumulates multiple hits', () => {
+    let gs = INITIAL_STATE
+    gs = applyBarHit(gs, 'red')
+    gs = applyBarHit(gs, 'red')
+    gs = applyBarHit(gs, 'white')
+    expect(gs.bar.them).toBe(2)
+    expect(gs.bar.you).toBe(1)
+  })
+})
 
 describe('INITIAL_STATE', () => {
   it('has 24 point entries', () => {
