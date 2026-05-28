@@ -2,10 +2,12 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTick } from '@pixi/react'
 import type { Graphics } from 'pixi.js'
 import {
-  POINT_LAYOUT, CHECKER_R, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y, checkerY,
-  ANIM_DURATION,
+  POINT_LAYOUT, CHECKER_R, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y,
+  checkerY, ANIM_DURATION,
 } from './boardLayout'
-import { INITIAL_STATE, type GameState, type CheckerColor } from './checkerState'
+import {
+  INITIAL_STATE, type GameState, type CheckerColor, applyMove, applyBarHit
+} from './checkerState'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -20,6 +22,10 @@ interface AnimState {
   fromPoint: number; toPoint: number
   // Normalized animation progress in [0, 1].
   t: number
+  // Set when destination is a blot
+  hitColor?: CheckerColor
+  // Set when this is the hit checker flying to the bar
+  isBarFly?: true
 }
 
 // ─── Drawing helpers ─────────────────────────────────────────────────────────
@@ -171,13 +177,19 @@ export default function BoardScene() {
       const fromY = checkerY(prev, stackPos)
       const toStackPos = Math.min((gameState.points[pointIdx]?.count ?? 0), MAX_STACK - 1)
       const toY = checkerY(pointIdx, toStackPos)
-
+      const destPt = gameState.points[pointIdx]
+      const moveColor = fromPt.color!
+      const isHit =
+        destPt.color !== null &&
+        destPt.color !== moveColor &&
+        destPt.count === 1
       animRef.current = {
         fromX: from.cx, fromY,
         toX: to.cx, toY,
         color: fromPt.color!,
         fromPoint: prev, toPoint: pointIdx,
         t: 0,
+        hitColor: isHit ? destPt.color : undefined,
       }
       setIsAnimating(true)
       return null
