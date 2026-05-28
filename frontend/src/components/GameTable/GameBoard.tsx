@@ -11,6 +11,13 @@ export default function GameBoard() {
       height={BOARD_HEIGHT}
       backgroundAlpha={0}
       className="block shrink-0"
+      onInit={(app) => {
+        if (import.meta.env.DEV) {
+          void import('@pixi/devtools').then(({ initDevtools }) => {
+            initDevtools({ app })
+          })
+        }
+      }}
     >
       <BoardScene />
     </Application>
