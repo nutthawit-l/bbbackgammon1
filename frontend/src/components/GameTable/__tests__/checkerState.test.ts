@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { INITIAL_STATE, applyMove, applyBarHit, type GameState } from '../checkerState'
+import { INITIAL_STATE, applyMove, applyBarHit, applyBarEntry, type GameState } from '../checkerState'
 
 describe('applyMove', () => {
   it('normal move: decrements source, increments destination', () => {
@@ -113,5 +113,56 @@ describe('INITIAL_STATE', () => {
   it('bar and bearOff start empty', () => {
     expect(INITIAL_STATE.bar).toEqual({ them: 0, you: 0 })
     expect(INITIAL_STATE.bearOff).toEqual({ them: 0, you: 0 })
+  })
+})
+
+describe('applyBarEntry', () => {
+  it('decrements bar.you when white enters an empty point', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      bar: { them: 0, you: 2 },
+      points: INITIAL_STATE.points.map((p, i) => i === 3 ? { color: null, count: 0 } : p),
+    }
+    const { nextState, hitColor } = applyBarEntry(gs, 'white', 3)
+    expect(nextState.bar.you).toBe(1)
+    expect(nextState.bar.them).toBe(0)
+    expect(nextState.points[3]).toEqual({ color: 'white', count: 1 })
+    expect(hitColor).toBeNull()
+  })
+
+  it('decrements bar.them when red enters an empty point', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      bar: { them: 2, you: 0 },
+      points: INITIAL_STATE.points.map((p, i) => i === 20 ? { color: null, count: 0 } : p),
+    }
+    const { nextState, hitColor } = applyBarEntry(gs, 'red', 20)
+    expect(nextState.bar.them).toBe(1)
+    expect(nextState.bar.you).toBe(0)
+    expect(nextState.points[20]).toEqual({ color: 'red', count: 1 })
+    expect(hitColor).toBeNull()
+  })
+
+  it('stacks onto own-color checkers', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      bar: { them: 0, you: 1 },
+      points: INITIAL_STATE.points.map((p, i) => i === 3 ? { color: 'white', count: 2 } : p),
+    }
+    const { nextState, hitColor } = applyBarEntry(gs, 'white', 3)
+    expect(nextState.points[3]).toEqual({ color: 'white', count: 3 })
+    expect(hitColor).toBeNull()
+  })
+
+  it('hits an opponent blot and returns hitColor', () => {
+    const gs: GameState = {
+      ...INITIAL_STATE,
+      bar: { them: 0, you: 1 },
+      points: INITIAL_STATE.points.map((p, i) => i === 3 ? { color: 'red', count: 1 } : p),
+    }
+    const { nextState, hitColor } = applyBarEntry(gs, 'white', 3)
+    expect(nextState.points[3]).toEqual({ color: 'white', count: 1 })
+    expect(hitColor).toBe('red')
+    expect(nextState.bar.you).toBe(0)
   })
 })
