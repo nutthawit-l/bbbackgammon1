@@ -6,7 +6,7 @@ import {
   checkerY, ANIM_DURATION,
 } from './boardLayout'
 import {
-  INITIAL_STATE, type GameState, type CheckerColor, applyMove, applyBarHit
+  INITIAL_STATE, type GameState, type CheckerColor, applyMove, applyBarHit, applyBarEntry
 } from './checkerState'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -27,6 +27,8 @@ interface AnimState {
   // Set when this is the hit checker flying to the bar
   isBarFly?: true
 }
+
+type Selected = number | 'bar-you' | 'bar-them' | null
 
 // ─── Drawing helpers ─────────────────────────────────────────────────────────
 
@@ -67,7 +69,7 @@ function drawChecker(g: Graphics, cx: number, cy: number, color: CheckerColor, h
 function drawCheckers(
   g: Graphics,
   gameState: GameState,
-  selected: number | null,
+  selected: Selected,
   animFromPoint: number | null,
 ) {
   g.clear()
@@ -88,10 +90,12 @@ function drawCheckers(
   }
   // Bar checkers are rendered in the center strip.
   for (let s = 0; s < gameState.bar.them; s++) {
-    drawChecker(g, BAR_CX, BAR_THEM_ANCHOR_Y + (-1) * s * CHECKER_R * 2, 'red')
+    const isTop = s === gameState.bar.them - 1
+    drawChecker(g, BAR_CX, BAR_THEM_ANCHOR_Y + (-1) * s * CHECKER_R * 2, 'red', isTop && selected === 'bar-them')
   }
   for (let s = 0; s < gameState.bar.you; s++) {
-    drawChecker(g, BAR_CX, BAR_YOU_ANCHOR_Y + s * CHECKER_R * 2, 'white')
+    const isTop = s === gameState.bar.you - 1
+    drawChecker(g, BAR_CX, BAR_YOU_ANCHOR_Y + s * CHECKER_R * 2, 'white', isTop && selected === 'bar-you')
   }
 }
 
@@ -120,7 +124,7 @@ const HIT_DRAWS = POINT_LAYOUT.map((layout) => {
 
 export default function BoardScene() {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE)
-  const [selected, setSelected] = useState<number | null>(null)
+  const [selected, setSelected] = useState<Selected>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const animRef = useRef<AnimState | null>(null)
   const animGfxRef = useRef<Graphics>(null)
@@ -148,8 +152,11 @@ export default function BoardScene() {
       animRef.current = null
       setIsAnimating(false)
     } else {
-      // Commit move to state
-      setGameState(gs => applyMove(gs, anim.fromPoint, anim.toPoint).nextState)
+      // Commit move — bar-entry (fromPoint === -1) or point-to-point.
+      setGameState(gs => anim.fromPoint === -1
+        ? applyBarEntry(gs, anim.color, anim.toPoint).nextState
+        : applyMove(gs, anim.fromPoint, anim.toPoint).nextState
+      )
 
       if (anim.hitColor) {
         // Animate the hit checker from the destination point to the bar.
@@ -179,6 +186,30 @@ export default function BoardScene() {
     if (animRef.current) return // ignore during animation
 
     setSelected(prev => {
+      // Bar-entry: animate the selected bar checker to the clicked point.
+      if (prev === 'bar-you' || prev === 'bar-them') {
+        const color: CheckerColor = prev === 'bar-you' ? 'white' : 'red'
+        const barCount = prev === 'bar-you' ? gameState.bar.you : gameState.bar.them
+        const anchor = prev === 'bar-you' ? BAR_YOU_ANCHOR_Y : BAR_THEM_ANCHOR_Y
+        const dir = prev === 'bar-you' ? 1 : -1
+        const fromY = anchor + dir * (barCount - 1) * CHECKER_R * 2
+        const to = POINT_LAYOUT[pointIdx]
+        const toStackPos = Math.min((gameState.points[pointIdx]?.count ?? 0), MAX_STACK - 1)
+        const toY = checkerY(pointIdx, toStackPos)
+        const destPt = gameState.points[pointIdx]
+        const isHit = destPt.color !== null && destPt.color !== color && destPt.count === 1
+        animRef.current = {
+          fromX: BAR_CX, fromY,
+          toX: to.cx, toY,
+          color,
+          fromPoint: -1, toPoint: pointIdx,
+          t: 0,
+          hitColor: isHit ? destPt.color : null,
+        }
+        setIsAnimating(true)
+        return null
+      }
+
       if (prev === null) {
         // Select if has checkers
         if ((gameState.points[pointIdx]?.count ?? 0) > 0) return pointIdx
@@ -213,6 +244,14 @@ export default function BoardScene() {
     })
   }, [gameState, isAnimating])
 
+  const handleBarClick = useCallback((color: CheckerColor) => {
+    if (animRef.current) return
+    const barCount = color === 'red' ? gameState.bar.them : gameState.bar.you
+    if (barCount === 0) return
+    const sentinel: Selected = color === 'red' ? 'bar-them' : 'bar-you'
+    setSelected(prev => prev === sentinel ? null : sentinel)
+  }, [gameState])
+
   const drawBoardCb = useCallback(drawBoard, [])
   const drawCheckersCb = useCallback(
     (g: Graphics) => drawCheckers(g, gameState, selected, animRef.current?.fromPoint ?? null),
@@ -238,6 +277,19 @@ export default function BoardScene() {
           onPointerDown={() => handleClick(i)}
         />
       ))}
+      {/* Bar hit areas — top half for red, bottom half for white. */}
+      <pixiGraphics
+        draw={(g) => { g.clear(); g.rect(176, 10, 18, 154).fill({ color: 0, alpha: 0.001 }) }}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={() => handleBarClick('red')}
+      />
+      <pixiGraphics
+        draw={(g) => { g.clear(); g.rect(176, 164, 18, 154).fill({ color: 0, alpha: 0.001 }) }}
+        eventMode="static"
+        cursor="pointer"
+        onPointerDown={() => handleBarClick('white')}
+      />
       {/* Layer 4: animated checker drawn imperatively each tick. */}
       <pixiGraphics ref={animGfxRef} draw={(g) => g.clear()} />
     </>
