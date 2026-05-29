@@ -98,3 +98,31 @@ export function applyBarHit(gs: GameState, hitColor: CheckerColor): GameState {
     },
   }
 }
+
+export function applyBarEntry(
+  gs: GameState,
+  color: CheckerColor,
+  toIdx: number,
+): { nextState: GameState; hitColor: CheckerColor | null } {
+  const pts = gs.points.map(p => ({ ...p }))
+  const dst = pts[toIdx]
+  const hitColor: CheckerColor | null =
+    dst.color !== null && dst.color !== color && dst.count === 1
+      ? dst.color
+      : null
+  pts[toIdx] = {
+    color,
+    count: hitColor !== null ? 1 : dst.count + 1,
+  }
+  return {
+    nextState: {
+      ...gs,
+      bar: {
+        them: gs.bar.them - (color === 'red' ? 1 : 0),
+        you:  gs.bar.you  - (color === 'white' ? 1 : 0),
+      },
+      points: pts,
+    },
+    hitColor,
+  }
+}
