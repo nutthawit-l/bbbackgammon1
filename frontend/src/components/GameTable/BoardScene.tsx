@@ -2,10 +2,12 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTick } from '@pixi/react'
 import type { Graphics } from 'pixi.js'
 import {
-  POINT_LAYOUT, CHECKER_R, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y, checkerY,
-  ANIM_DURATION,
+  POINT_LAYOUT, CHECKER_R, BAR_CX, BAR_THEM_ANCHOR_Y, BAR_YOU_ANCHOR_Y,
+  checkerY, ANIM_DURATION,
 } from './boardLayout'
-import { INITIAL_STATE, type GameState, type CheckerColor } from './checkerState'
+import {
+  INITIAL_STATE, type GameState, type CheckerColor, applyMove, applyBarHit
+} from './checkerState'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -20,6 +22,10 @@ interface AnimState {
   fromPoint: number; toPoint: number
   // Normalized animation progress in [0, 1].
   t: number
+  // Set when destination is a blot
+  hitColor: CheckerColor | null
+  // Set when this is the hit checker flying to the bar
+  isBarFly?: true
 }
 
 // ─── Drawing helpers ─────────────────────────────────────────────────────────
@@ -136,19 +142,36 @@ export default function BoardScene() {
     if (anim.t < 1) {
       // Draw only the in-flight checker on a dedicated top layer.
       drawChecker(g, x, y, anim.color)
-    } else {
-      // Commit move to state
-      setGameState(gs => {
-        const pts = gs.points.map(p => ({ ...p }))
-        const from = pts[anim.fromPoint]
-        pts[anim.fromPoint] = { ...from, count: from.count - 1 }
-        if (pts[anim.fromPoint].count === 0) pts[anim.fromPoint] = { color: null, count: 0 }
-        const to = pts[anim.toPoint]
-        pts[anim.toPoint] = { color: anim.color, count: to.count + 1 }
-        return { ...gs, points: pts }
-      })
+    } else if (anim.isBarFly) {
+      // Hit checker reached bar -- increment bar count.
+      setGameState(gs => applyBarHit(gs, anim.color))
       animRef.current = null
       setIsAnimating(false)
+    } else {
+      // Commit move to state
+      setGameState(gs => applyMove(gs, anim.fromPoint, anim.toPoint).nextState)
+
+      if (anim.hitColor) {
+        // Animate the hit checker from the destination point to the bar.
+        const barCount = anim.hitColor === 'red' ? gameState.bar.them : gameState.bar.you
+        const dir = anim.hitColor === 'red' ? -1 : 1
+        const anchor = anim.hitColor === 'red' ? BAR_THEM_ANCHOR_Y : BAR_YOU_ANCHOR_Y
+        animRef.current = {
+          fromX: POINT_LAYOUT[anim.toPoint].cx,
+          fromY: checkerY(anim.toPoint, 0),
+          toX: BAR_CX,
+          toY: anchor + dir * barCount * CHECKER_R * 2,
+          color: anim.hitColor,
+          fromPoint: anim.toPoint,
+          toPoint: -1,
+          t: 0,
+          hitColor: null,
+          isBarFly: true,
+        }
+      } else {
+        animRef.current = null
+        setIsAnimating(false)
+      }
     }
   })
 
@@ -171,13 +194,19 @@ export default function BoardScene() {
       const fromY = checkerY(prev, stackPos)
       const toStackPos = Math.min((gameState.points[pointIdx]?.count ?? 0), MAX_STACK - 1)
       const toY = checkerY(pointIdx, toStackPos)
-
+      const destPt = gameState.points[pointIdx]
+      const moveColor = fromPt.color!
+      const isHit =
+        destPt.color !== null &&
+        destPt.color !== moveColor &&
+        destPt.count === 1
       animRef.current = {
         fromX: from.cx, fromY,
         toX: to.cx, toY,
         color: fromPt.color!,
         fromPoint: prev, toPoint: pointIdx,
         t: 0,
+        hitColor: isHit ? destPt.color : null,
       }
       setIsAnimating(true)
       return null
