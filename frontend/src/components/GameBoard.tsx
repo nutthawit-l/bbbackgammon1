@@ -10,6 +10,9 @@ export default function GameBoard() {
       width={BOARD_WIDTH} 
       height={BOARD_HEIGHT}
       backgroundAlpha={0}
+      antialias
+      resolution={window.devicePixelRatio || 1}
+      autoDensity
       className="block shrink-0"
       onInit={(app) => {
         if (import.meta.env.DEV) {
