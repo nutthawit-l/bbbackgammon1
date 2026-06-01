@@ -109,7 +109,7 @@ function drawCheckers(g: Graphics, gs: game.GameState) {
 
     const stackSize = Math.min(ps.count, game.MAX_CHECKER_STACK)
     for (let sc = 0; sc < stackSize; sc++) {
-      const y = game.getCheckerY(i, sc)
+      const y = game.getCheckerY(p, sc)
       drawChecker(g, p.x, y, ps.checker, false)
     }
   }
