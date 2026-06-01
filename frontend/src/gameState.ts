@@ -82,8 +82,7 @@ export function getPoint(idx: number): Point {
 }
 
 // Returns the canvas Y coordinate for a checker at the given stack position on a point.
-export function getCheckerY(pointIdx: number, stackCount: number): number {
-  const p = getPoint(pointIdx)
+export function getCheckerY(p: Point, stackCount: number): number {
   const checkerDiameter = CHECKER_RADIUS_PX * 2
   return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * checkerDiameter)
 }
