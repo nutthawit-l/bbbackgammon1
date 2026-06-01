@@ -19,6 +19,9 @@ const CHECKER_WHITE_STROKE = { color: 0x9a9490, width: 1 }
 const CHECKER_RED_COLOR = 0xd42200
 const CHECKER_RED_STROKE = { color: 0x8a1200, width: 1 }
 const CHECKER_HIGHTLIGHT = { color: 0x4499ff, alpha: 0.6 }
+const LOOSE_CHECKER_STACK = 5
+const COMPACT_CHECKER_STACK = 10
+const DENSE_CHECKER_STACK = 17
 
 function drawBoard(g: Graphics) {
   g.clear()
@@ -86,7 +89,7 @@ function drawBoard(g: Graphics) {
 
 function drawChecker(
   g: Graphics, x: number, y: number,
-  checker: game.Checker, highlight = false,
+  checker: game.Checker, highlight = false
 ) {
   if (highlight) {
     g.circle(x, y, (game.CHECKER_RADIUS_PX + 4)).fill(CHECKER_HIGHTLIGHT)
@@ -98,7 +101,7 @@ function drawChecker(
 
 function drawCheckers(g: Graphics, gs: game.GameState) {
   g.clear()
-  
+
   for (let i = 0; i < game.TOTAL_CHECKER_NUMBER; i++) {
     const ps = game.getPointState(gs, i)
     
@@ -106,11 +109,45 @@ function drawCheckers(g: Graphics, gs: game.GameState) {
     if (game.isPointEmpty(ps)) continue
     
     const p = game.getPoint(i)
-
-    const stackSize = Math.min(ps.count, game.MAX_CHECKER_STACK)
-    for (let sc = 0; sc < stackSize; sc++) {
-      const y = game.getCheckerY(p, sc)
-      drawChecker(g, p.x, y, ps.checker, false)
+    
+    if (ps.count <= LOOSE_CHECKER_STACK) {
+      const stackSize = Math.min(ps.count, LOOSE_CHECKER_STACK)
+      for (let sc = 0; sc < stackSize; sc++) {
+        const y = game.getCheckerY(p, sc)
+        drawChecker(g, p.x, y, ps.checker, false)
+      }
+    } else if (ps.count <= COMPACT_CHECKER_STACK) {
+      const stackSize = Math.min(ps.count, COMPACT_CHECKER_STACK)
+      for (let sc = 0; sc < stackSize; sc++) {
+        const checkerDiameter = game.CHECKER_RADIUS_PX * 2
+        const y = p.y + p.direction * (game.CHECKER_RADIUS_PX + sc * (checkerDiameter / 2))
+        drawChecker(g, p.x, y, ps.checker, false)
+        // Draw a counter number on the last checker
+        if (sc == ps.count) {
+          drawChecker(g, p.x, y, ps.checker, false)
+        } 
+      }
+    } else if (ps.count <= DENSE_CHECKER_STACK) {
+      const stackSize = Math.min(ps.count, DENSE_CHECKER_STACK)
+      for (let sc = 0; sc < stackSize; sc++) {
+        const checkerDiameter = game.CHECKER_RADIUS_PX * 2
+        const y = p.y + p.direction * (game.CHECKER_RADIUS_PX + sc * (checkerDiameter / 3.5))
+        drawChecker(g, p.x, y, ps.checker, false)
+        // Draw a counter number on the last checker
+        if (sc == ps.count) {
+          drawChecker(g, p.x, y, ps.checker, false)
+        } 
+      }
+    } else {
+      for (let sc = 0; sc < ps.count; sc++) {
+        const checkerDiameter = game.CHECKER_RADIUS_PX * 2
+        const y = p.y + p.direction * (game.CHECKER_RADIUS_PX + sc * (checkerDiameter / 5))
+        drawChecker(g, p.x, y, ps.checker, false)
+        // Draw a counter number on the last checker
+        if (sc == ps.count) {
+          drawChecker(g, p.x, y, ps.checker, false)
+        } 
+      }
     }
   }
 }
