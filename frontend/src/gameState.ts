@@ -11,7 +11,6 @@ export const TRIANGLE_LIGHT = 0xc8501a
 // Checker
 export const TOTAL_CHECKER_NUMBER = 24
 export const CHECKER_RADIUS_PX = 10
-export const MAX_CHECKER_STACK = 7
 
 export type Checker = 'red' | 'white' | null
 
