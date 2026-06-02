@@ -5,8 +5,6 @@ export const BOARD_BORDER_PX = 10
 export const BAR_WIDTH_PX = 18
 export const TRIANGLE_WIDTH_PX = 27.65
 export const TRIANGLE_HEIGHT_PX = 114
-export const TRIANGLE_DARK = 0x7b2d10
-export const TRIANGLE_LIGHT = 0xc8501a
 
 // Checker
 export const TOTAL_CHECKER_NUMBER = 24
