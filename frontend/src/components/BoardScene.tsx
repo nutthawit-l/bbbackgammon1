@@ -9,7 +9,6 @@ extend({ Graphics })
 const BOARD_ROUNDED = 5
 const BOARD_BORDER_COLOR = 0x5e3014
 const PLAYGROUND_COLOR = 0xc8924a
-const CHECKER_TRAY_WIDTH_PX = 29
 const TRIANGLE_DARK = 0x7b2d10
 const TRIANGLE_LIGHT = 0xc8501a
 
@@ -19,9 +18,7 @@ const CHECKER_WHITE_STROKE = { color: 0x9a9490, width: 1 }
 const CHECKER_RED_COLOR = 0xd42200
 const CHECKER_RED_STROKE = { color: 0x8a1200, width: 1 }
 const CHECKER_HIGHTLIGHT = { color: 0x4499ff, alpha: 0.6 }
-const LOOSE_CHECKER_STACK = 5
-const COMPACT_CHECKER_STACK = 10
-const DENSE_CHECKER_STACK = 17
+
 
 function drawBoard(g: Graphics) {
   g.clear()
@@ -40,7 +37,7 @@ function drawBoard(g: Graphics) {
     game.BOARD_CONTAINER_HEIGHT_PX - 2 * game.BOARD_BORDER_PX
   const widthPlayground =
     game.BOARD_CONTAINER_WIDTH_PX -
-    (game.BOARD_BORDER_PX + CHECKER_TRAY_WIDTH_PX)
+    (game.BOARD_BORDER_PX + game.CHECKER_TRAY_WIDTH_PX)
   g.rect(xPlayground, yPlayground, widthPlayground, heightPlayground)
     .fill(PLAYGROUND_COLOR)
   
@@ -110,44 +107,9 @@ function drawCheckers(g: Graphics, gs: game.GameState) {
     
     const p = game.getPoint(i)
     
-    if (ps.count <= LOOSE_CHECKER_STACK) {
-      const stackSize = Math.min(ps.count, LOOSE_CHECKER_STACK)
-      for (let sc = 0; sc < stackSize; sc++) {
-        const y = game.getCheckerY(p, sc)
-        drawChecker(g, p.x, y, ps.checker, false)
-      }
-    } else if (ps.count <= COMPACT_CHECKER_STACK) {
-      const stackSize = Math.min(ps.count, COMPACT_CHECKER_STACK)
-      for (let sc = 0; sc < stackSize; sc++) {
-        const checkerDiameter = game.CHECKER_RADIUS_PX * 2
-        const y = p.y + p.direction * (game.CHECKER_RADIUS_PX + sc * (checkerDiameter / 2))
-        drawChecker(g, p.x, y, ps.checker, false)
-        // Draw a counter number on the last checker
-        if (sc == ps.count) {
-          drawChecker(g, p.x, y, ps.checker, false)
-        } 
-      }
-    } else if (ps.count <= DENSE_CHECKER_STACK) {
-      const stackSize = Math.min(ps.count, DENSE_CHECKER_STACK)
-      for (let sc = 0; sc < stackSize; sc++) {
-        const checkerDiameter = game.CHECKER_RADIUS_PX * 2
-        const y = p.y + p.direction * (game.CHECKER_RADIUS_PX + sc * (checkerDiameter / 3.5))
-        drawChecker(g, p.x, y, ps.checker, false)
-        // Draw a counter number on the last checker
-        if (sc == ps.count) {
-          drawChecker(g, p.x, y, ps.checker, false)
-        } 
-      }
-    } else {
-      for (let sc = 0; sc < ps.count; sc++) {
-        const checkerDiameter = game.CHECKER_RADIUS_PX * 2
-        const y = p.y + p.direction * (game.CHECKER_RADIUS_PX + sc * (checkerDiameter / 5))
-        drawChecker(g, p.x, y, ps.checker, false)
-        // Draw a counter number on the last checker
-        if (sc == ps.count) {
-          drawChecker(g, p.x, y, ps.checker, false)
-        } 
-      }
+    for (let sc = 0; sc < ps.count; sc++) {
+      const y = game.getCheckerY(p, sc, ps.count)
+      drawChecker(g, p.x, y, ps.checker, false)
     }
   }
 }
