@@ -3,12 +3,16 @@ export const BOARD_CONTAINER_WIDTH_PX = 389
 export const BOARD_CONTAINER_HEIGHT_PX = 328
 export const BOARD_BORDER_PX = 10
 export const BAR_WIDTH_PX = 18
+export const CHECKER_TRAY_WIDTH_PX = 29
 export const TRIANGLE_WIDTH_PX = 27.65
 export const TRIANGLE_HEIGHT_PX = 114
 
 // Checker
 export const TOTAL_CHECKER_NUMBER = 24
 export const CHECKER_RADIUS_PX = 10
+export const LOOSE_CHECKER_STACK = 5
+export const COMPACT_CHECKER_STACK = 10
+export const DENSE_CHECKER_STACK = 17
 
 export type Checker = 'red' | 'white' | null
 
@@ -78,10 +82,19 @@ export function getPoint(idx: number): Point {
   return POINTS[idx]
 }
 
-// Returns the canvas Y coordinate for a checker at the given stack position on a point.
-export function getCheckerY(p: Point, stackCount: number): number {
-  const checkerDiameter = CHECKER_RADIUS_PX * 2
-  return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * checkerDiameter)
+// Returns the canvas Y coordinate for a checker at the given stack position,
+// adjusting spacing based on how many checkers are stacked on the point.
+export function getCheckerY(p: Point, stackCount: number, totalCount: number): number {
+  const checkerDiameterPx = CHECKER_RADIUS_PX * 2
+  if (totalCount <= LOOSE_CHECKER_STACK) {
+    return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * checkerDiameterPx)
+  } else if (totalCount <= COMPACT_CHECKER_STACK) {
+    return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * (checkerDiameterPx / 2))
+  } else if (totalCount <= DENSE_CHECKER_STACK) {
+    return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * (checkerDiameterPx / 3.5))
+  } else {
+    return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * (checkerDiameterPx / 5))
+  }
 }
 
 function getTriangleCenterX(column: number): number {
