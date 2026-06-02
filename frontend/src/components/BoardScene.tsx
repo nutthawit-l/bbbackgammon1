@@ -127,10 +127,9 @@ const CLICK_AREAS = game.POINTS.map((p, _) => {
   const col = (() => {
     const home = p.x - game.BOARD_BORDER_PX
     const outer = home >= (game.TRIANGLE_WIDTH_PX * 6) + game.BAR_WIDTH_PX
-    const triangleCenter = game.TRIANGLE_WIDTH_PX / 2
     return outer 
-      ? Math.round((home - game.BAR_WIDTH_PX - triangleCenter) / game.TRIANGLE_WIDTH_PX)
-      : Math.round((home - triangleCenter) / game.TRIANGLE_WIDTH_PX)
+      ? Math.round((home - game.BAR_WIDTH_PX - game.TRIANGLE_CENTER_PX) / game.TRIANGLE_WIDTH_PX)
+      : Math.round((home - game.TRIANGLE_CENTER_PX) / game.TRIANGLE_WIDTH_PX)
   })()
   const xOffset = col >= 6 ? 18 : 0
   const xLeft = game.BOARD_BORDER_PX + col * game.TRIANGLE_WIDTH_PX + xOffset
