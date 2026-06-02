@@ -6,6 +6,7 @@ export const BAR_WIDTH_PX = 18
 export const CHECKER_TRAY_WIDTH_PX = 29
 export const TRIANGLE_WIDTH_PX = 27.65
 export const TRIANGLE_HEIGHT_PX = 114
+export const TRIANGLE_CENTER_PX = TRIANGLE_WIDTH_PX / 2 
 
 // Checker
 export const TOTAL_CHECKER_NUMBER = 24
@@ -99,8 +100,7 @@ export function getCheckerY(p: Point, stackCount: number, totalCount: number): n
 
 function getTriangleCenterX(column: number): number {
   const shiftPx = column >= (TOTAL_CHECKER_NUMBER / 4) ? BAR_WIDTH_PX : 0
-  const triangleCenter = TRIANGLE_WIDTH_PX / 2
-  return column * TRIANGLE_WIDTH_PX + triangleCenter + BOARD_BORDER_PX + shiftPx
+  return column * TRIANGLE_WIDTH_PX + TRIANGLE_CENTER_PX + BOARD_BORDER_PX + shiftPx
 }
 
 const E: PointState = { checker: null, count: 0 }
