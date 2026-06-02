@@ -152,6 +152,26 @@ function drawCheckers(g: Graphics, gs: game.GameState) {
   }
 }
 
+// Create a transparent rectangle area that captures pointer events
+// When mouse move to this area, it will change to hand point
+function createClickArea(x: number, y: number, w: number, h: number) {
+  return (g: Graphics) => {
+    g.clear()
+    g.rect(x, y, w, h).fill({ color: 0, alpha: 0 })
+  }
+}
+
+const CLICK_AREAS = game.POINTS.map((p, i) => {
+  const triangle = (() => {
+    const home = p.x - game.BOARD_BORDER_PX
+    const outer = home >= (game.TRIANGLE_WIDTH_PX * 6) + game.BAR_WIDTH_PX
+    const triangleCenter = game.TRIANGLE_WIDTH_PX / 2
+    return outer 
+      ? Math.round((home - game.BAR_WIDTH_PX - triangleCenter) / game.TRIANGLE_WIDTH_PX)
+      : Math.round((home - triangleCenter) / game.TRIANGLE_WIDTH_PX)
+  })()
+})
+
 export default function BoardScene() {
   const [gameState] = useState<game.GameState>(game.INITIAL_STATE)
 
@@ -161,6 +181,15 @@ export default function BoardScene() {
       <pixiGraphics
         draw={useCallback((g: Graphics) => drawCheckers(g, gameState), [])}
       />
+      {CLICK_AREAS.map((area: number, i: number) => (
+        <pixiGraphics 
+          key={i}
+          draw={useCallback(createClickArea(area.x, area.y, area.w, area.h),[])} 
+          eventMode='static'
+          cursor='pointer'
+          onPointerDown={() => handleClick(i)}
+        />
+      ))}
     </>
   ) 
 }
