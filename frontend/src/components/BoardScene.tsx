@@ -41,15 +41,16 @@ function drawBoard(g: Graphics) {
   g.rect(xPlayground, yPlayground, widthPlayground, heightPlayground)
     .fill(PLAYGROUND_COLOR)
   
-  // 12 bottom triangles -- col 0-5 left of bar, col 6-11 right of bar
-  for (let col = 0; col < 12; col++) {
-    const xOffset = col >= 6 ? game.BAR_WIDTH_PX : 0
+  // 12 bottom triangles
+  // pointIndex 0-5 left of bar, pointIndex 6-11 right of bar
+  for (let pIdx = 0; pIdx < 12; pIdx++) {
+    const xOffset = pIdx >= 6 ? game.BAR_WIDTH_PX : 0
     
     const xLeft =
-      game.BOARD_BORDER_PX + col * game.TRIANGLE_WIDTH_PX + xOffset
+      game.BOARD_BORDER_PX + pIdx * game.TRIANGLE_WIDTH_PX + xOffset
     const xRight = xLeft + game.TRIANGLE_WIDTH_PX
     const xTop = (xLeft + xRight) / 2
-    const color = col % 2 === 0 ? TRIANGLE_DARK : TRIANGLE_LIGHT
+    const color = pIdx % 2 === 0 ? TRIANGLE_DARK : TRIANGLE_LIGHT
     
     // bottom
     const yBottom = game.BOARD_BORDER_PX + heightPlayground
@@ -59,15 +60,16 @@ function drawBoard(g: Graphics) {
     ]).fill(color)
   }
   
-  // 12 top triangles -- col 0-5 left of bar, col 6-11 right of bar
-  for (let col = 0; col < 12; col++) {
-    const xOffset = col >= 6 ? game.BAR_WIDTH_PX : 0
+  // 12 top triangles
+  // pointIndex 0-5 left of bar, pointIndex 6-11 right of bar
+  for (let pIdx = 0; pIdx < 12; pIdx++) {
+    const xOffset = pIdx >= 6 ? game.BAR_WIDTH_PX : 0
     
     const xLeft =
-      game.BOARD_BORDER_PX + col * game.TRIANGLE_WIDTH_PX + xOffset
+      game.BOARD_BORDER_PX + pIdx * game.TRIANGLE_WIDTH_PX + xOffset
     const xRight = xLeft + game.TRIANGLE_WIDTH_PX
     const xTop = (xLeft + xRight) / 2
-    const color = col % 2 === 0 ? TRIANGLE_LIGHT : TRIANGLE_DARK
+    const color = pIdx % 2 === 0 ? TRIANGLE_LIGHT : TRIANGLE_DARK
     
     // top
     const yTop = game.BOARD_BORDER_PX
@@ -124,15 +126,15 @@ function createClickArea(x: number, y: number, w: number, h: number) {
 }
 
 const CLICK_AREAS = game.POINTS.map((p, _) => {
-  const col = (() => {
+  const pIdx = (() => {
     const home = p.x - game.BOARD_BORDER_PX
     const outer = home >= (game.TRIANGLE_WIDTH_PX * 6) + game.BAR_WIDTH_PX
     return outer 
       ? Math.round((home - game.BAR_WIDTH_PX - game.TRIANGLE_CENTER_PX) / game.TRIANGLE_WIDTH_PX)
       : Math.round((home - game.TRIANGLE_CENTER_PX) / game.TRIANGLE_WIDTH_PX)
   })()
-  const xOffset = col >= 6 ? 18 : 0
-  const xLeft = game.BOARD_BORDER_PX + col * game.TRIANGLE_WIDTH_PX + xOffset
+  const xOffset = pIdx >= 6 ? 18 : 0
+  const xLeft = game.BOARD_BORDER_PX + pIdx * game.TRIANGLE_WIDTH_PX + xOffset
   const isTop = p.direction === 1
   const x = xLeft
   const y = isTop ? game.BOARD_BORDER_PX : (game.BOARD_CONTAINER_HEIGHT_PX / 2)
