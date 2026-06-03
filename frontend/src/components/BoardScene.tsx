@@ -2,38 +2,12 @@ import { useCallback, useState, useRef } from 'react'
 import { extend, useTick } from '@pixi/react'
 import { Graphics } from 'pixi.js'
 import type { GameState, CheckerSelected } from '../game/state'
-import { INITIAL_STATE } from '../game/state'
-import { drawBoard } from '../game/board'
-import { drawCheckers } from '../game/checker'
+import { INITIAL_STATE, getPoint, TOTAL_CHECKER_NUMBER } from '../game/state'
+import { drawBoard, createClickArea, CLICK_AREAS } from '../game/board'
+import { drawCheckers, getCheckerY } from '../game/checker'
 
 extend({ Graphics })
 
-// // Create a transparent rectangle area that captures pointer events
-// // When mouse move to this area, it will change to hand point
-// function createClickArea(x: number, y: number, w: number, h: number) {
-//   return (g: Graphics) => {
-//     g.clear()
-//     g.rect(x, y, w, h).fill({ color: 0, alpha: 0 }).stroke(CHECKER_RED_STROKE)
-//   }
-// }
-
-// const CLICK_AREAS = game.POINTS.map((p, _) => {
-//   const pIdx = (() => {
-//     const home = p.x - game.BOARD_BORDER_PX
-//     const outer = home >= (game.TRIANGLE_WIDTH_PX * 6) + game.BAR_WIDTH_PX
-//     return outer 
-//       ? Math.round((home - game.BAR_WIDTH_PX - game.TRIANGLE_CENTER_PX) / game.TRIANGLE_WIDTH_PX)
-//       : Math.round((home - game.TRIANGLE_CENTER_PX) / game.TRIANGLE_WIDTH_PX)
-//   })()
-//   const xOffset = pIdx >= 6 ? 18 : 0
-//   const xLeft = game.BOARD_BORDER_PX + pIdx * game.TRIANGLE_WIDTH_PX + xOffset
-//   const isTop = p.direction === 1
-//   const x = xLeft
-//   const y = isTop ? game.BOARD_BORDER_PX : (game.BOARD_CONTAINER_HEIGHT_PX / 2)
-//   const w = game.TRIANGLE_WIDTH_PX
-//   const h = (game.BOARD_CONTAINER_HEIGHT_PX / 2) - game.BOARD_BORDER_PX
-//   return { x, y, w, h }
-// })
 
 export default function BoardScene() {
   const [gameState, setGameState] = useState<GameState>(INITIAL_STATE)
@@ -81,38 +55,38 @@ export default function BoardScene() {
   //   }
   // })
   
-  // const handleClick = useCallback((pIdx: number) => {
-  //   setSelected(prevSelected => {
-  //     // Deselect
-  //     if (prevSelected == pIdx) return null
+  const handleClick = useCallback((pIdx: number) => {
+    setSelected(prev => {
+      // Deselect
+      if (prev == pIdx) return null
         
-  //     // Select the point, if that point have checkers
-  //     if (gameState.points[pIdx]?.count > 0) return pIdx
+      // Select the point, if that point have checkers
+      if (gameState.points[pIdx]?.count > 0) return pIdx
         
-  //     // Start animation
-  //     if (prevSelected != null) {
-  //       const pSrc = game.getPoint(prevSelected)
-  //       const pDest = game.getPoint(pIdx)
-  //       const psSrcRef = gameState.points[prevSelected]
-  //       pSrc.y = game.getCheckerY(
-  //         pSrc, psSrcRef.count, game.TOTAL_CHECKER_NUMBER)
-  //       const psDestRef = gameState.points[pIdx]
-  //       pDest.y = game.getCheckerY(
-  //         pDest, psDestRef.count, game.TOTAL_CHECKER_NUMBER)
+      // Start animation
+      if (prev != null) {
+        const pSrc = getPoint(prev)
+        const pDest = getPoint(pIdx)
+        const psSrc = gameState.points[prev]
+        pSrc.coord.y = getCheckerY(
+          pSrc, psSrc.count, TOTAL_CHECKER_NUMBER)
+        const psDest = gameState.points[pIdx]
+        pDest.coord.y = getCheckerY(
+          pDest, psDest.count, TOTAL_CHECKER_NUMBER)
 
-  //       animRef.current = {
-  //         srcPoint: pSrc,
-  //         destPoint: pDest,
-  //         srcPointIndex: prevSelected,
-  //         destPointIndex: pIdx,
-  //         checker: psSrcRef.checker,
-  //         t: 0
-  //       }
-  //       setIsAnimating(true)
-  //     }
-  //     return null 
-  //   })
-  // }, [])
+        // animRef.current = {
+        //   srcPoint: pSrc,
+        //   destPoint: pDest,
+        //   srcPointIndex: prevSelected,
+        //   destPointIndex: pIdx,
+        //   checker: psSrcRef.checker,
+        //   t: 0
+        // }
+        // setIsAnimating(true)
+      }
+      return null 
+    })
+  }, [])
 
   return (
     <>
@@ -125,17 +99,16 @@ export default function BoardScene() {
           )
         }
       />
+      {CLICK_AREAS.map((area, i) => (
+        <pixiGraphics 
+          key={i}
+          draw={useCallback(
+            createClickArea(area.x, area.y, area.w, area.h),[])} 
+          eventMode='static'
+          cursor='pointer'
+          onPointerDown={() => handleClick(i)}
+        />
+      ))}
     </>
   )
-  //     {CLICK_AREAS.map((area, i) => (
-  //       <pixiGraphics 
-  //         key={i}
-  //         draw={useCallback(createClickArea(area.x, area.y, area.w, area.h),[])} 
-  //         eventMode='static'
-  //         cursor='pointer'
-  //         onPointerDown={() => handleClick(i)}
-  //       />
-  //     ))}
-  //   </>
-  // ) 
 }

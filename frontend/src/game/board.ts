@@ -9,6 +9,8 @@ import {
   QUARTER_POINT_NUM,
   POINT_WIDTH_PX,
   POINT_HEIGHT_PX,
+  POINT_CENTER_PX,
+  POINTS,
 } from '../game/state'
 
 // Board container
@@ -81,3 +83,30 @@ export function drawBoard(gfx: Graphics) {
   // Bar
   drawBar(gfx)
 }
+
+// Create a transparent rectangle area that captures pointer events
+// When mouse move to this area, it will change to hand point
+export function createClickArea(x: number, y: number, w: number, h: number) {
+  return (gfx: Graphics) => {
+    gfx.clear()
+    gfx.rect(x, y, w, h).fill({ color: 0, alpha: 0 })
+  }
+}
+
+export const CLICK_AREAS = POINTS.map((p, _) => {
+  const pIdx = (() => {
+    const home = p.coord.x - BOARD_BORDER_PX
+    const outer = home >= (POINT_WIDTH_PX * QUARTER_POINT_NUM) + BAR_WIDTH_PX
+    return outer 
+      ? Math.round((home - BAR_WIDTH_PX - POINT_CENTER_PX) / POINT_WIDTH_PX)
+      : Math.round((home - POINT_CENTER_PX) / POINT_WIDTH_PX)
+  })()
+  const xOffset = pIdx >= QUARTER_POINT_NUM ? BAR_WIDTH_PX : 0
+  const xLeft = BOARD_BORDER_PX + pIdx * POINT_WIDTH_PX + xOffset
+  const isTop = p.direction === 1
+  const x = xLeft
+  const y = isTop ? BOARD_BORDER_PX : (BOARD_CONTAINER_HEIGHT_PX / 2)
+  const w = POINT_WIDTH_PX
+  const h = (BOARD_CONTAINER_HEIGHT_PX / 2) - BOARD_BORDER_PX
+  return { x, y, w, h }
+})
