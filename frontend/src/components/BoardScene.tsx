@@ -1,49 +1,12 @@
 import { useCallback, useState, useRef } from 'react'
 import { extend, useTick } from '@pixi/react'
 import { Graphics } from 'pixi.js'
-import * as game from '../gameState'
-import { drawBoard } from '../states/board'
+import type { GameState, CheckerSelected } from '../game/state'
+import { INITIAL_STATE } from '../game/state'
+import { drawBoard } from '../game/board'
+import { drawCheckers } from '../game/checker'
 
 extend({ Graphics })
-
-// Checker
-const CHECKER_WHITE_COLOR = 0xe0dcd5
-const CHECKER_WHITE_STROKE = { color: 0x9a9490, width: 1 }
-const CHECKER_RED_COLOR = 0xd42200
-const CHECKER_RED_STROKE = { color: 0x8a1200, width: 1 }
-const CHECKER_HIGHTLIGHT = { color: 0x4499ff, alpha: 0.6 }
-
-// function drawChecker(
-//   g: Graphics, x: number, y: number,
-//   checker: game.Checker, highlight = false
-// ) {
-//   if (highlight) {
-//     g.circle(x, y, (game.CHECKER_RADIUS_PX + 4)).fill(CHECKER_HIGHTLIGHT)
-//   }
-//   const fill = checker === 'red' ? CHECKER_RED_COLOR : CHECKER_WHITE_COLOR
-//   const stroke = checker === 'red' ? CHECKER_RED_STROKE : CHECKER_WHITE_STROKE
-//   g.circle(x, y, game.CHECKER_RADIUS_PX).fill(fill).stroke(stroke)
-// }
-
-// function drawCheckers(g: Graphics, gs: game.GameState, selected: number | null) {
-//   g.clear()
-
-//   for (let i = 0; i < game.TOTAL_CHECKER_NUMBER; i++) {
-//     const ps = game.getPointState(gs, i)
-    
-//     // If point is empty, nothing is draw.
-//     if (game.isPointEmpty(ps)) continue
-    
-//     const p = game.getPoint(i)
-    
-//     const isSelect = selected === i
-//     for (let sc = 0; sc < ps.count; sc++) {
-//       const y = game.getCheckerY(p, sc, ps.count)
-//       const isTop = sc === ps.count - 1
-//       drawChecker(g, p.x, y, ps.checker, (isSelect && isTop))
-//     }
-//   }
-// }
 
 // // Create a transparent rectangle area that captures pointer events
 // // When mouse move to this area, it will change to hand point
@@ -73,8 +36,8 @@ const CHECKER_HIGHTLIGHT = { color: 0x4499ff, alpha: 0.6 }
 // })
 
 export default function BoardScene() {
-  // const [gameState, setGameState] = useState<game.GameState>(game.INITIAL_STATE)
-  // const [selected, setSelected] = useState<number | null>(null)
+  const [gameState, setGameState] = useState<GameState>(INITIAL_STATE)
+  const [selected, setSelected] = useState<CheckerSelected>(null)
   // const [isAnimating, setIsAnimating] = useState(false)
   // const animRef = useRef<game.AnimState | null>(null)
   // const animGfxRef = useRef<Graphics | null>(null)
@@ -151,18 +114,19 @@ export default function BoardScene() {
   //   })
   // }, [])
 
-  return <><pixiGraphics draw={useCallback(drawBoard, [])} /></>
-  // return (
-  //   <>
-  //     <pixiGraphics draw={useCallback(drawBoard, [])} />
-  //     <pixiGraphics
-  //       draw={
-  //         useCallback(
-  //           (g: Graphics) => drawCheckers(g, gameState, selected),
-  //           [selected]
-  //         )
-  //       }
-  //     />
+  return (
+    <>
+      <pixiGraphics draw={useCallback(drawBoard, [])} />
+      <pixiGraphics
+        draw={
+          useCallback(
+            (g: Graphics) => drawCheckers(g, gameState, selected),
+            [selected]
+          )
+        }
+      />
+    </>
+  )
   //     {CLICK_AREAS.map((area, i) => (
   //       <pixiGraphics 
   //         key={i}

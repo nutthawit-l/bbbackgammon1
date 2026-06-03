@@ -1,14 +1,21 @@
 import { Graphics } from 'pixi.js'
 
+import { 
+  BOARD_CONTAINER_WIDTH_PX, 
+  BOARD_CONTAINER_HEIGHT_PX, 
+  BOARD_BORDER_PX,
+  BAR_WIDTH_PX, 
+  HALF_POINT_NUM,
+  QUARTER_POINT_NUM,
+  POINT_WIDTH_PX,
+  POINT_HEIGHT_PX,
+} from '../game/state'
+
 // Board container
-const BOARD_CONTAINER_WIDTH_PX = 389
-const BOARD_CONTAINER_HEIGHT_PX = 328
-const BOARD_BORDER_PX = 10
 const BOARD_ROUNDED = 5
 const BOARD_BORDER_COLOR = 0x5e3014
 
 // Playground 
-const BAR_WIDTH_PX = 18
 const CHECKER_TRAY_WIDTH_PX = 29
 const PG_COLOR = 0xc8924a
 const PG_HEIGHT_PX = BOARD_CONTAINER_HEIGHT_PX - 2 * BOARD_BORDER_PX
@@ -18,12 +25,6 @@ const PG_WIDTH_PX =
 // Point
 const POINT_DARK_COLOR = 0x7b2d10
 const POINT_LIGHT_COLOR = 0xc8501a
-const POINT_WIDTH_PX = 27.65
-const POINT_HEIGHT_PX = 114
-const POINT_CENTER_PX = POINT_WIDTH_PX / 2 
-const TOTAL_POINT_NUM = 24
-const HALF_POINT_NUM = TOTAL_POINT_NUM / 2
-const QUARTER_POINT_NUM = HALF_POINT_NUM / 2
 
 function drawBar(gfx: Graphics) {
   // Bar
