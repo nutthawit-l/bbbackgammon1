@@ -1,12 +1,4 @@
 // Board
-export const BOARD_CONTAINER_WIDTH_PX = 389
-export const BOARD_CONTAINER_HEIGHT_PX = 328
-export const BOARD_BORDER_PX = 10
-export const BAR_WIDTH_PX = 18
-export const CHECKER_TRAY_WIDTH_PX = 29
-export const TRIANGLE_WIDTH_PX = 27.65
-export const TRIANGLE_HEIGHT_PX = 114
-export const TRIANGLE_CENTER_PX = TRIANGLE_WIDTH_PX / 2 
 
 // Checker
 export const TOTAL_CHECKER_NUMBER = 24
@@ -15,6 +7,18 @@ export const LOOSE_CHECKER_STACK = 5
 export const COMPACT_CHECKER_STACK = 10
 export const DENSE_CHECKER_STACK = 17
 
+// Animation
+export const ANIM_DURATION = 20
+
+export interface AnimState {
+  srcPoint: Point
+  destPoint: Point
+  srcPointIndex: number
+  destPointIndex: number
+  checker: Checker
+  t: number
+}
+
 export type Checker = 'red' | 'white' | null
 
 export interface PointState {
@@ -22,6 +26,18 @@ export interface PointState {
   checker: Checker
   // Number of checkers currently on this point.
   count: number
+}
+
+export function removeChecker(ps: PointState): PointState {
+  ps.count - 1
+  if (ps.count == 0) ps.checker = null
+  return ps
+}
+
+export function addChecker(ps: PointState, checker: Checker): PointState {
+  ps.count + 1
+  ps.checker = checker
+  return ps
 }
 
 export function isPointEmpty(ps: PointState): boolean {
@@ -85,7 +101,8 @@ export function getPoint(idx: number): Point {
 
 // Returns the canvas Y coordinate for a checker at the given stack position,
 // adjusting spacing based on how many checkers are stacked on the point.
-export function getCheckerY(p: Point, stackCount: number, totalCount: number): number {
+export function getCheckerY(
+  p: Point, stackCount: number, totalCount: number): number {
   const checkerDiameterPx = CHECKER_RADIUS_PX * 2
   if (totalCount <= LOOSE_CHECKER_STACK) {
     return p.y + p.direction * (CHECKER_RADIUS_PX + stackCount * checkerDiameterPx)
