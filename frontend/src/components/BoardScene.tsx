@@ -98,7 +98,7 @@ function drawChecker(
   g.circle(x, y, game.CHECKER_RADIUS_PX).fill(fill).stroke(stroke)
 }
 
-function drawCheckers(g: Graphics, gs: game.GameState) {
+function drawCheckers(g: Graphics, gs: game.GameState, selected: number | null) {
   g.clear()
 
   for (let i = 0; i < game.TOTAL_CHECKER_NUMBER; i++) {
@@ -109,9 +109,11 @@ function drawCheckers(g: Graphics, gs: game.GameState) {
     
     const p = game.getPoint(i)
     
+    const isSelect = selected === i
     for (let sc = 0; sc < ps.count; sc++) {
       const y = game.getCheckerY(p, sc, ps.count)
-      drawChecker(g, p.x, y, ps.checker, false)
+      const isTop = sc === ps.count - 1
+      drawChecker(g, p.x, y, ps.checker, (isSelect && isTop))
     }
   }
 }
@@ -145,12 +147,30 @@ const CLICK_AREAS = game.POINTS.map((p, _) => {
 
 export default function BoardScene() {
   const [gameState] = useState<game.GameState>(game.INITIAL_STATE)
+  const [selected, setSelected] = useState<number | null>(null)
+  
+  const handleClick = useCallback((pIdx: number) => {
+    setSelected(prev => {
+      // Deselect
+      if (prev == pIdx) return null
+        
+      // Select the point, if that point have checkers
+      if (gameState.points[pIdx]?.count > 0) return pIdx
+
+      return null
+    })
+  }, [])
 
   return (
     <>
       <pixiGraphics draw={useCallback(drawBoard, [])} />
       <pixiGraphics
-        draw={useCallback((g: Graphics) => drawCheckers(g, gameState), [])}
+        draw={
+          useCallback(
+            (g: Graphics) => drawCheckers(g, gameState, selected),
+            [selected]
+          )
+        }
       />
       {CLICK_AREAS.map((area, i) => (
         <pixiGraphics 
@@ -158,6 +178,7 @@ export default function BoardScene() {
           draw={useCallback(createClickArea(area.x, area.y, area.w, area.h),[])} 
           eventMode='static'
           cursor='pointer'
+          onPointerDown={() => handleClick(i)}
         />
       ))}
     </>
