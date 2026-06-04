@@ -92,9 +92,9 @@ function getPointCenterX(pIdx: PointIndex): number {
   return pIdx * POINT_WIDTH_PX + POINT_CENTER_PX + BOARD_BORDER_PX + shiftPx
 }
 
-function getBarCenterX(): number {
+/* function getBarCenterX(): number {
   return PG_WIDTH_PX / 2
-}
+} */
 
 const BOTTOM_Y = BOARD_CONTAINER_HEIGHT_PX - BOARD_BORDER_PX
 
