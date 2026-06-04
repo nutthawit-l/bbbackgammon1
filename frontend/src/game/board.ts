@@ -105,8 +105,8 @@ export const CLICK_AREAS = POINTS.map((p, _) => {
   const xLeft = BOARD_BORDER_PX + pIdx * POINT_WIDTH_PX + xOffset
   const isTop = p.direction === 1
   const x = xLeft
-  const y = isTop ? BOARD_BORDER_PX : (BOARD_CONTAINER_HEIGHT_PX / 2)
+  const y = isTop ? BOARD_BORDER_PX : (BOARD_BORDER_PX + PG_HEIGHT_PX - POINT_HEIGHT_PX)
   const w = POINT_WIDTH_PX
-  const h = (BOARD_CONTAINER_HEIGHT_PX / 2) - BOARD_BORDER_PX
+  const h = POINT_HEIGHT_PX
   return { x, y, w, h }
 })
