@@ -43,7 +43,7 @@ export default function BoardScene() {
       // Commit move
       setGameState(prev => {
         const pss = prev.points.map(ps => ({ ...ps }))
-
+        
         // Remove checker from old point
         const psOld = pss[anim.srcPointIndex]
         pss[anim.srcPointIndex] = rmCheckerFromPoint(psOld)
@@ -92,7 +92,6 @@ export default function BoardScene() {
         }
       }
         
-        
       // Start animation
       if (prev != null) {
         const pSrc = getPoint(prev)
@@ -123,7 +122,7 @@ export default function BoardScene() {
       <pixiGraphics
         draw={
           useCallback(
-            (g: Graphics) => drawCheckers(g, gameState, selected),
+            (gfx: Graphics) => drawCheckers(gfx, gameState, selected),
             [selected, gameState]
           )
         }

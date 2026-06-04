@@ -8,7 +8,7 @@ import type {
   CheckerColor,
   Point 
 } from '../game/state'
-import { TOTAL_CHECKER_NUMBER, getPoint, getPointState } from '../game/state'
+import { TOTAL_POINT_NUMBER, getPoint, getPointState } from '../game/state'
 
 const RADIUS_PX = 10
 const DIAMETER_PX = RADIUS_PX * 2
@@ -58,7 +58,7 @@ export function drawCheckers(
   gfx: Graphics, gs: GameState, sel: CheckerSelected ) {
     gfx.clear()
     
-    for (let pIdx = 0; pIdx < TOTAL_CHECKER_NUMBER; pIdx++) {
+    for (let pIdx = 0; pIdx < TOTAL_POINT_NUMBER; pIdx++) {
       const ps = getPointState(gs, pIdx)
     
       // If point is empty, nothing is draw.

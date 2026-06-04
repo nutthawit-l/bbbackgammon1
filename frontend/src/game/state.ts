@@ -8,7 +8,7 @@ export const QUARTER_POINT_NUM = HALF_POINT_NUM / 2
 export const BOARD_CONTAINER_WIDTH_PX = 389
 export const BOARD_CONTAINER_HEIGHT_PX = 328
 export const BOARD_BORDER_PX = 10
-export const TOTAL_CHECKER_NUMBER = 24
+export const TOTAL_CHECKER_NUMBER = 30
 export const CHECKER_RADIUS_PX = 10
 export const LOOSE_CHECKER_STACK = 5
 export const COMPACT_CHECKER_STACK = 10
@@ -17,6 +17,7 @@ export const ANIM_DURATION = 20
 export const CHECKER_TRAY_WIDTH_PX = 29
 export const PG_HEIGHT_PX = BOARD_CONTAINER_HEIGHT_PX - 2 * BOARD_BORDER_PX
 export const PG_WIDTH_PX = BOARD_CONTAINER_WIDTH_PX - BOARD_BORDER_PX - CHECKER_TRAY_WIDTH_PX
+export const TOTAL_POINT_NUMBER = 24
 
 export type CheckerColor = 'red' | 'white' | null
 export type CheckerSelected = number | null
@@ -158,7 +159,7 @@ export const INITIAL_STATE: GameState = {
   ],
 
   bars: [
-    { checker: 'red', count: 0 },
-    { checker: 'white', count: 0 }
+    E,
+    E
   ]
 }
