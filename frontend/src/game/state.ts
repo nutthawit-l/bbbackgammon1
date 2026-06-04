@@ -60,7 +60,6 @@ export interface AnimState {
   destPointIndex: PointIndex
   checker: CheckerColor
   t: number
-  isBlotHit?: boolean
 }
 
 export function rmCheckerFromPoint(ps: PointState): PointState {
@@ -162,5 +161,5 @@ export const INITIAL_STATE: GameState = {
   bars: [
     E,
     E
-  ]
+  ],
 }

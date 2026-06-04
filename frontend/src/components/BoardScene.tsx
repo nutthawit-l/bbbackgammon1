@@ -92,6 +92,7 @@ export default function BoardScene() {
           const srcY = getCheckerY(pSrc, psSrc.count - 1, psSrc.count)
           const destY = getCheckerY(pDest, psDest.count, psDest.count + 1)
           
+          // Start animation
           animRef.current = {
             srcPoint: { x: pSrc.coord.x, y: srcY },
             destPoint: { x: pDest.coord.x, y: destY },
@@ -100,12 +101,6 @@ export default function BoardScene() {
             checker: psSrc.checker,
             t: 0
           }
-          
-          // if (isBlotHit) {
-          //   animRef.current = { ...animRef.current, isBlotHit: true }
-          // }
-          
-          // console.log(animRef.current)
           
           setIsAnimating(true)
         }
