@@ -36,7 +36,7 @@ export default function BoardScene() {
     
     gfx.clear()
     
-    if (anim.t < 1 && anim.checker != null) {
+    if (anim.t < 1) {
       const checker = newChecker({x, y}, anim.checker, false)
       drawChecker(gfx, checker)
     } else {
