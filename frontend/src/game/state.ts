@@ -13,20 +13,9 @@ export const CHECKER_RADIUS_PX = 10
 export const LOOSE_CHECKER_STACK = 5
 export const COMPACT_CHECKER_STACK = 10
 export const DENSE_CHECKER_STACK = 17
+export const ANIM_DURATION = 20
 
-// export const ANIM_DURATION = 20
-
-// export interface AnimState {
-//   srcPoint: Point
-//   destPoint: Point
-//   srcPointIndex: number
-//   destPointIndex: number
-//   checker: Checker
-//   t: number
-// }
-// 
-
-export type CheckerColor = 'red' | 'white'
+export type CheckerColor = 'red' | 'white' | null
 export type CheckerSelected = number | null
 export type PointIndex = number
 
@@ -58,17 +47,26 @@ export interface GameState {
   points: PointState[]
 }
 
-// export function rmChecker(ps: PointState): PointState {
-//   ps.count - 1
-//   if (ps.count == 0) ps.checker = null
-//   return ps
-// }
+export interface AnimState {
+  srcPoint: Coord
+  destPoint: Coord
+  srcPointIndex: PointIndex
+  destPointIndex: PointIndex
+  checker: CheckerColor
+  t: number
+}
 
-// export function addChecker(ps: PointState, checker: Checker): PointState {
-//   ps.count + 1
-//   ps.checker = checker
-//   return ps
-// }
+export function rmCheckerFromPoint(ps: PointState): PointState {
+  ps.count -= 1
+  if (ps.count == 0) ps.checker = null
+  return ps
+}
+
+export function addCheckerToPoint(ps: PointState, checker: CheckerColor): PointState {
+  ps.count += 1
+  ps.checker = checker
+  return ps
+}
 
 // export function isPointEmpty(ps: PointState): boolean {
 //   return ps.checker === null || ps.count === 0;

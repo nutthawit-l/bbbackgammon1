@@ -5,6 +5,7 @@ import type {
   Checker, 
   GameState, 
   CheckerSelected, 
+  CheckerColor,
   Point 
 } from '../game/state'
 import { TOTAL_CHECKER_NUMBER, getPoint, getPointState } from '../game/state'
@@ -21,8 +22,8 @@ const LOOSE_STACK = 5
 const COMPACT_STACK = 10
 const DENSE_STACK = 17
 
-function newChecker(
-  coord: Coord, color: 'red' | 'white', hightlight: boolean): Checker {
+export function newChecker(
+  coord: Coord, color: CheckerColor, hightlight: boolean): Checker {
     return { coord: coord, color: color, hightlight: hightlight }
   }
 
@@ -42,7 +43,7 @@ export function getCheckerY(
   }
 }
 
-function drawChecker(gfx: Graphics, c: Checker) {
+export function drawChecker(gfx: Graphics, c: Checker) {
   const { coord, color, hightlight } = c 
   const { x, y } = coord
   if (hightlight) {
