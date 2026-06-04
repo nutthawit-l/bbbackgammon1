@@ -58,15 +58,15 @@ export function drawCheckers(
   gfx: Graphics, gs: GameState, sel: CheckerSelected ) {
     gfx.clear()
     
-    for (let i = 0; i < TOTAL_CHECKER_NUMBER; i++) {
-      const ps = getPointState(gs, i)
+    for (let pIdx = 0; pIdx < TOTAL_CHECKER_NUMBER; pIdx++) {
+      const ps = getPointState(gs, pIdx)
     
       // If point is empty, nothing is draw.
       if (ps.checker === null || ps.count === 0) continue
 
-      const p = getPoint(i)
+      const p = getPoint(pIdx)
 
-      const isSel = sel === i
+      const isSel = sel === pIdx 
       for (let sc = 0; sc < ps.count; sc++) {
         const y = getCheckerY(p, sc, ps.count)
         const isTop = sc === ps.count - 1

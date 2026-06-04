@@ -14,6 +14,9 @@ export const LOOSE_CHECKER_STACK = 5
 export const COMPACT_CHECKER_STACK = 10
 export const DENSE_CHECKER_STACK = 17
 export const ANIM_DURATION = 20
+export const CHECKER_TRAY_WIDTH_PX = 29
+export const PG_HEIGHT_PX = BOARD_CONTAINER_HEIGHT_PX - 2 * BOARD_BORDER_PX
+export const PG_WIDTH_PX = BOARD_CONTAINER_WIDTH_PX - BOARD_BORDER_PX - CHECKER_TRAY_WIDTH_PX
 
 export type CheckerColor = 'red' | 'white' | null
 export type CheckerSelected = number | null
@@ -45,6 +48,8 @@ export interface PointState {
 export interface GameState {
   // 24 points where index 0 = point 1 ... index 23 = point 24.
   points: PointState[]
+  // 2 bars
+  bars: PointState[]
 }
 
 export interface AnimState {
@@ -81,9 +86,13 @@ export function getPoint(pIdx: PointIndex): Point {
   return POINTS[pIdx]
 }
 
-function getPointCenterX(pIdx: number): number {
+function getPointCenterX(pIdx: PointIndex): number {
   const shiftPx = pIdx >= QUARTER_POINT_NUM ? BAR_WIDTH_PX : 0
   return pIdx * POINT_WIDTH_PX + POINT_CENTER_PX + BOARD_BORDER_PX + shiftPx
+}
+
+function getBarCenterX(): number {
+  return PG_WIDTH_PX / 2
 }
 
 const BOTTOM_Y = BOARD_CONTAINER_HEIGHT_PX - BOARD_BORDER_PX
@@ -146,5 +155,10 @@ export const INITIAL_STATE: GameState = {
   E,
   E,
   { checker: 'white', count: 2 }, // [23] point 24
+  ],
+
+  bars: [
+    { checker: 'red', count: 0 },
+    { checker: 'white', count: 0 }
   ]
 }

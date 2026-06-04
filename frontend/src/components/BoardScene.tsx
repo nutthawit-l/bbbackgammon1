@@ -65,9 +65,33 @@ export default function BoardScene() {
     setSelected(prev => {
       // Deselect
       if (prev == pIdx) return null
-        
+      
       // Select the point, if that point have checkers
-      if (gameState.points[pIdx]?.count > 0) return pIdx
+      if (gameState.points[pIdx]?.count > 1) return pIdx
+        
+      // Hit the blot
+      if (gameState.points[pIdx]?.count == 1) {
+        // Start animation
+        if (prev != null) {
+          const pSrc = getPoint(prev)
+          const pDest = getPoint(pIdx)
+          const psSrc = gameState.points[prev]
+          const psDest = gameState.points[pIdx]
+          const pSrcY = getCheckerY(pSrc, psSrc.count - 1, psSrc.count)
+          const pDestY = getCheckerY(pDest, psDest.count, psDest.count + 1)
+
+          animRef.current = {
+            srcPoint: { x: pSrc.coord.x, y: pSrcY },
+            destPoint: { x: pDest.coord.x, y: pDestY },
+            srcPointIndex: prev,
+            destPointIndex: pIdx,
+            checker: psSrc.checker,
+            t: 0
+          }
+          setIsAnimating(true)
+        }
+      }
+        
         
       // Start animation
       if (prev != null) {

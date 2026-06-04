@@ -11,6 +11,8 @@ import {
   POINT_HEIGHT_PX,
   POINT_CENTER_PX,
   POINTS,
+  PG_WIDTH_PX,
+  PG_HEIGHT_PX,
 } from '../game/state'
 
 // Board container
@@ -18,11 +20,7 @@ const BOARD_ROUNDED = 5
 const BOARD_BORDER_COLOR = 0x5e3014
 
 // Playground 
-const CHECKER_TRAY_WIDTH_PX = 29
 const PG_COLOR = 0xc8924a
-const PG_HEIGHT_PX = BOARD_CONTAINER_HEIGHT_PX - 2 * BOARD_BORDER_PX
-const PG_WIDTH_PX = 
-  BOARD_CONTAINER_WIDTH_PX - BOARD_BORDER_PX - CHECKER_TRAY_WIDTH_PX 
 
 // Point
 const POINT_DARK_COLOR = 0x7b2d10
