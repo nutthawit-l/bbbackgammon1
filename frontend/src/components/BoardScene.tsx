@@ -64,55 +64,53 @@ export default function BoardScene() {
   const handleClick = useCallback((pIdx: number) => {
     setSelected(prev => {
       // Deselect
-      if (prev == pIdx) return null
-      
-      // Select the point, if that point have checkers
-      if (gameState.points[pIdx]?.count > 1) return pIdx
+      if (prev === pIdx) return null
         
-      // Hit the blot
-      if (gameState.points[pIdx]?.count == 1) {
-        // Start animation
-        if (prev != null) {
+      // Select
+      if (prev === null && gameState.points[pIdx]?.count > 0) return pIdx
+      
+      // Check which of 2 events it is:
+      // 1. Normal move
+      // 2. Blot hit
+      if (prev !== null) {
+        const psSrc = gameState.points[prev]
+        const psDest = gameState.points[pIdx]
+        
+        // Check is blot hit?
+        const isBlotHit = (
+          psDest.count === 1 && 
+          psDest.checker != psSrc.checker
+        )
+        
+        if (isBlotHit) {
+          // Handle blot hit
+          console.log('hit')
+        } else {
+          // Handle normal move
           const pSrc = getPoint(prev)
           const pDest = getPoint(pIdx)
-          const psSrc = gameState.points[prev]
-          const psDest = gameState.points[pIdx]
-          const pSrcY = getCheckerY(pSrc, psSrc.count - 1, psSrc.count)
-          const pDestY = getCheckerY(pDest, psDest.count, psDest.count + 1)
-
+          const srcY = getCheckerY(pSrc, psSrc.count - 1, psSrc.count)
+          const destY = getCheckerY(pDest, psDest.count, psDest.count + 1)
+          
           animRef.current = {
-            srcPoint: { x: pSrc.coord.x, y: pSrcY },
-            destPoint: { x: pDest.coord.x, y: pDestY },
+            srcPoint: { x: pSrc.coord.x, y: srcY },
+            destPoint: { x: pDest.coord.x, y: destY },
             srcPointIndex: prev,
             destPointIndex: pIdx,
             checker: psSrc.checker,
             t: 0
           }
+          
+          // if (isBlotHit) {
+          //   animRef.current = { ...animRef.current, isBlotHit: true }
+          // }
+          
+          // console.log(animRef.current)
+          
           setIsAnimating(true)
         }
       }
-        
-      // Start animation
-      if (prev != null) {
-        const pSrc = getPoint(prev)
-        const pDest = getPoint(pIdx)
-        const psSrc = gameState.points[prev]
-        const psDest = gameState.points[pIdx]
-        const srcY = getCheckerY(pSrc, psSrc.count - 1, psSrc.count)
-        const destY = getCheckerY(pDest, psDest.count, psDest.count + 1)
-
-        animRef.current = {
-          srcPoint: { x: pSrc.coord.x, y: srcY },
-          destPoint: { x: pDest.coord.x, y: destY },
-          srcPointIndex: prev,
-          destPointIndex: pIdx,
-          checker: psSrc.checker,
-          t: 0
-        }
-        setIsAnimating(true)
-      }
-
-      return null 
+      return null
     })
   }, [gameState])
 

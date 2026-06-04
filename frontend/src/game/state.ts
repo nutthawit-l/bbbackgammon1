@@ -60,6 +60,7 @@ export interface AnimState {
   destPointIndex: PointIndex
   checker: CheckerColor
   t: number
+  isBlotHit?: boolean
 }
 
 export function rmCheckerFromPoint(ps: PointState): PointState {
